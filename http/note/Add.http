@@ -1,0 +1,10 @@
+POST http://localhost:8080/data
+Content-Type: application/json
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJodHRwczovL2FwaS5vcGVucGhvbmljcy5jb20iLCJpc3MiOiJPcGVuUGhvbmljcy1KV1QtSXNzdWVyIiwidXNlcklkIjoiNWJlMTc4YmMtMjRhOC00NTRkLTg2NzYtYmNkM2UzNDBlNmE5In0.QX4e0fLJjUeaSd2s25KlRcDqC9XsrCSt8ItR5XXCaic
+
+{
+    "nativeId": "en",
+    "languageId": "ta",
+    "languageName": "Tamil",
+    "flag": "in"
+}

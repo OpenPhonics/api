@@ -1,0 +1,10 @@
+POST http://localhost:8000/auth/register
+Content-Type: application/json
+
+{
+    "name": "Advait Vedant",
+    "classCode": "e5fe1k",
+    "native": "en",
+    "language": 1,
+    "isAdmin": true
+}
