@@ -47,4 +47,9 @@ object ConfigModule {
     @Provides
     @SecretKey
     fun secretKey(config: ApplicationConfig): String = config.property("key.secret").getString()
+
+    @Singleton
+    @Provides
+    @AdminKey
+    fun adminKey(config: ApplicationConfig): String = config.property("key.admin").getString()
 }

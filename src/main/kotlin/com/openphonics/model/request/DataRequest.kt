@@ -28,7 +28,7 @@ data class SectionRequest(
 @Serializable
 data class SentenceRequest(
     val languageId: Int,
-    val words: String
+    val words: List<Int>
 )
 
 @Serializable
@@ -39,4 +39,10 @@ data class WordRequest(
     val translatedWord: String,
     val word: String,
     val languageId: Int
+)
+
+@Serializable
+data class FlagRequest(
+    val flag: String,
+    val id: String
 )

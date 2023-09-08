@@ -134,25 +134,31 @@ class ProgressDaoImpl @Inject constructor(
     override fun deleteLanguageProgress(languageProgressId: String): Boolean = transaction {
         val eLanguageProgress = EntityLanguageProgress.findById(UUID.fromString(languageProgressId))
 
-        eLanguageProgress?.run {
-            eLanguageProgress.units.map { unit ->
-                unit.sections.map { section ->
-                    EntitySectionProgressLearnedWordCrossRef.find {
-                        (SectionProgressLearnedWordCrossRefs.section eq section.id)
-                    }.forEach { ref ->
-                        ref.run {
-                            delete()
-                        }
-                    }
-                    section.run {
-                        delete()
-                    }
-                }
-                unit.run {
-                    delete()
-                }
+        eLanguageProgress?.let {
+//            eLanguageProgress.units.map { unit ->
+//                unit.sections.map { section ->
+//                    EntitySectionProgressLearnedWordCrossRef.find {
+//                        (SectionProgressLearnedWordCrossRefs.section eq section.id)
+//                    }.forEach { ref ->
+//                        ref.run {
+//                            delete()
+//                        }
+//                    }
+//                    section.run {
+//                        delete()
+//                    }
+//                }
+//                unit.run {
+//                    delete()
+//                }
+//            }
+
+            EntityUser[it.user.id].apply {
+                this.currentLanguage = null
             }
-            delete()
+            it.run {
+                delete()
+            }
             return@transaction true
         }
         return@transaction false
@@ -192,18 +198,18 @@ class ProgressDaoImpl @Inject constructor(
     }
 
     override fun exists(id: String, type: Any): Boolean = transaction {
-        when (type::class) {
-            EntityLanguageProgress::class -> EntityLanguageProgress
-            EntitySectionProgress::class -> EntitySectionProgress
-            EntityUnitProgress::class -> EntityUnitProgress
-            EntitySectionProgressLearnedWordCrossRef::class -> EntitySectionProgressLearnedWordCrossRef
-            else -> throw IllegalArgumentException("Unsupported progress type: ${type::class.simpleName}")
+        when (type) {
+            EntityLanguageProgress -> EntityLanguageProgress
+            EntitySectionProgress -> EntitySectionProgress
+            EntityUnitProgress -> EntityUnitProgress
+            EntitySectionProgressLearnedWordCrossRef -> EntitySectionProgressLearnedWordCrossRef
+            else -> return@transaction false
         }.findById(UUID.fromString(id)) != null
     }
 
     override fun isOwnedByUser(progressId: String, userId: String, type: Any): Boolean = transaction {
-        when (type::class) {
-            EntityLanguageProgress::class ->
+        when (type) {
+            EntityLanguageProgress ->
                 (LanguagesProgress innerJoin Users)
                     .slice(LanguagesProgress.id)
                     .select {
@@ -211,7 +217,7 @@ class ProgressDaoImpl @Inject constructor(
                     }
                     .count() > 0
 
-            EntityUnitProgress::class ->
+            EntityUnitProgress ->
                 (UnitsProgress innerJoin LanguagesProgress innerJoin Users)
                     .slice(UnitsProgress.id)
                     .select {
@@ -219,16 +225,13 @@ class ProgressDaoImpl @Inject constructor(
                     }
                     .count() > 0
 
-            EntitySectionProgress::class ->
+            EntitySectionProgress ->
                 (SectionsProgress innerJoin UnitsProgress innerJoin LanguagesProgress innerJoin Users)
                     .slice(SectionsProgress.id)
                     .select {
                         (SectionsProgress.id eq UUID.fromString(progressId)) and (Users.id eq UUID.fromString(userId))
                     }
                     .count() > 0
-
-
-
             else -> false
         }
     }

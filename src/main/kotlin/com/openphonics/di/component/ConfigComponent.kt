@@ -20,11 +20,13 @@ import dagger.Subcomponent
 import com.openphonics.di.module.ConfigModule
 import com.openphonics.di.module.SecretKey
 import com.openphonics.data.database.DatabaseConfig
+import com.openphonics.di.module.AdminKey
 import javax.inject.Singleton
 
 @Singleton
 @Subcomponent(modules = [ConfigModule::class])
 interface ConfigComponent {
     @SecretKey fun secretKey(): String
+    @AdminKey fun adminKey(): String
     fun databaseConfig(): DatabaseConfig
 }

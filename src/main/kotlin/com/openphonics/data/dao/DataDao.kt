@@ -1,15 +1,23 @@
 package com.openphonics.data.dao
 import com.openphonics.data.database.table.data.*
+import com.openphonics.data.database.table.progress.SectionsProgress
+import com.openphonics.data.database.table.references.SectionProgressLearnedWordCrossRefs
 import com.openphonics.data.database.table.references.SectionSentenceCrossRefs
 import com.openphonics.data.database.table.references.SectionWordCrossRefs
 import com.openphonics.data.database.table.references.SentenceWordCrossRefs
 import com.openphonics.data.entity.data.*
+import com.openphonics.data.entity.progress.EntitySectionProgress
+import com.openphonics.data.entity.references.EntitySectionProgressLearnedWordCrossRef
 import com.openphonics.data.entity.references.EntitySectionSentenceCrossRef
 import com.openphonics.data.entity.references.EntitySectionWordCrossRef
 import com.openphonics.data.entity.references.EntitySentenceWordCrossRef
 import com.openphonics.data.model.data.*
 import com.openphonics.data.model.data.Unit
+import io.ktor.server.plugins.*
+import org.jetbrains.exposed.dao.IntEntity
+import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 import javax.inject.Inject
@@ -21,8 +29,9 @@ interface DataDao {
     fun addUnit(title: String, order: Int, languageId: Int): Int
     fun addSection(title: String, order: Int, lessonCount: Int, unitId: Int): Int
     fun addWordToSection(wordId: Int, sectionId: Int): Int
+    fun removeWordFromSection(wordId: Int, sectionId: Int): Boolean
     fun addSentenceToSection(sentenceId: Int, sectionId: Int): Int
-    fun addWordToSentence(sentenceId: Int, wordId: Int): Int
+    fun removeSentenceFromSection(sentenceId: Int, sectionId: Int): Boolean
     fun addWord(
         phonic: String,
         sound: String,
@@ -32,7 +41,13 @@ interface DataDao {
         languageId: Int
     ): Int
 
-    fun addSentence(languageId: Int, words: List<String>): Int
+    fun addFlag(flagImg: String, flagId: String): String
+
+    fun getAllFlags(): List<Flag>
+
+    fun getFlagById(flagId: String): Flag?
+
+    fun addSentence(languageId: Int, words: List<Int>): Int
     fun deleteLanguage(languageId: Int): Boolean
     fun deleteUnit(unitId: Int): Boolean
     fun deleteSection(sectionId: Int): Boolean
@@ -57,17 +72,11 @@ interface DataDao {
     fun getSentence(nativeId: String, languageId: String, sentence: String): Sentence?
     fun getSentenceById(sentenceId: Int): Sentence?
 
+    fun updateSentence(sentenceId: Int, languageId: Int, words: List<Int>): Int
+    fun updateWord(wordId: Int, phonic: String, sound: String, translatedSound: String, translateWord: String, text: String, languageId: Int): Int
+    fun updateSection(sectionId: Int, title: String, order: Int, lessonCount: Int, unitId: Int): Int
     fun updateUnit(unitId: Int, title: String, order: Int, languageId: Int): Int
-
     fun updateLanguage(languageId: Int, native: String, language: String, languageName: String, flag: String): Int
-
-//    fun getUnitsByLanguage(languageId: Int): List<Unit>
-//    fun getSectionsByUnit(unitId: Int): List<Section>
-//    fun getAllWordsByLanguage(languageId: Int): List<Word>
-//    fun getAllSentencesByLanguage(languageId: Int): List<Sentence>
-//    fun getSectionSentenceReferences(sectionId: Int): List<SectionSentenceCrossRef>
-//    fun getSectionWordReferences(sectionId: Int): List<SectionWordCrossRef>
-//    fun getSentenceWordReferences(sentenceId: Int): List<SentenceWordCrossRef>
 
     fun exists(id: Int, type: Any): Boolean
 
@@ -82,12 +91,7 @@ interface DataDao {
 
 @Singleton
 class DataDaoImpl @Inject constructor() : DataDao {
-    override fun addLanguage(
-        nativeId: String,
-        languageId: String,
-        languageName: String,
-        flag: String
-    ): Int = transaction {
+    override fun addLanguage(nativeId: String, languageId: String, languageName: String, flag: String): Int = transaction {
         EntityLanguage.new {
             this.nativeId = nativeId
             this.languageId = languageId
@@ -95,14 +99,16 @@ class DataDaoImpl @Inject constructor() : DataDao {
             this.flag = EntityID(flag, Flags)
         }.id.value
     }
-
-    private fun updateUnitOrder(order: Int, languageId: Int): Int = transaction {
+    private fun updateUnitOrder(order: Int, languageId: Int, prevOrder: Int = Int.MAX_VALUE): Int = transaction {
         var max = 0
         EntityUnit.find {
             (Units.language eq languageId)
         }.map {
-            if (it.order >= order) {
-                it.apply {
+            it.apply {
+                if (this.order > prevOrder){
+                    this.order -=1
+                }
+                if (this.order >= order) {
                     this.order += 1
                 }
             }
@@ -110,21 +116,23 @@ class DataDaoImpl @Inject constructor() : DataDao {
         }
         max + 1
     }
-    private fun updateSectionOrder(order: Int, unitId: Int): Int = transaction{
+    private fun updateSectionOrder(order: Int, unitId: Int, prevOrder: Int = Int.MAX_VALUE): Int = transaction {
         var max = 0
         EntitySection.find {
             (Sections.unit eq unitId)
         }.map {
-            if (it.order >= order) {
-                it.apply {
+            it.apply {
+                if (this.order > prevOrder){
+                    this.order -=1
+                }
+                if (this.order >= order) {
                     this.order += 1
                 }
             }
             if (it.order > max) max = it.order
         }
-        max +1
+        max + 1
     }
-
     override fun addUnit(
         title: String,
         order: Int,
@@ -136,7 +144,6 @@ class DataDaoImpl @Inject constructor() : DataDao {
             this.order = min(max, order)
             this.language = EntityLanguage[languageId]
         }.id.value
-
     }
     override fun addSection(
         title: String,
@@ -158,17 +165,42 @@ class DataDaoImpl @Inject constructor() : DataDao {
             this.word = EntityWord[wordId].id
         }.id.value
     }
+    override fun removeWordFromSection(wordId: Int, sectionId: Int): Boolean = transaction{
+        EntitySectionWordCrossRef.find {
+            (SectionWordCrossRefs.section eq sectionId) and (SectionWordCrossRefs.word eq wordId)
+        }.firstOrNull()
+            ?.let {word->
+                word.run {
+                    delete()
+                }
+                EntitySectionProgressLearnedWordCrossRef.find {
+                    (SectionProgressLearnedWordCrossRefs.learnedWord eq wordId)
+                }.forEach {learnedWord ->
+                    learnedWord.run {
+                        delete()
+                    }
+                }
+                return@transaction true
+            }
+        return@transaction false
+    }
     override fun addSentenceToSection(sentenceId: Int, sectionId: Int): Int = transaction {
         EntitySectionSentenceCrossRef.new {
             this.section = EntitySection[sectionId].id
             this.sentence = EntitySentence[sentenceId].id
         }.id.value
     }
-    override fun addWordToSentence(sentenceId: Int, wordId: Int): Int = transaction {
-        EntitySentenceWordCrossRef.new {
-            this.sentence = EntitySentence[sentenceId].id
-            this.word = EntityWord[wordId].id
-        }.id.value
+    override fun removeSentenceFromSection(sentenceId: Int, sectionId: Int): Boolean = transaction {
+        EntitySectionSentenceCrossRef.find {
+            (SectionSentenceCrossRefs.section eq sectionId) and (SectionSentenceCrossRefs.sentence eq sentenceId)
+        }.firstOrNull()
+            ?.let {
+                it.run {
+                    delete()
+                }
+                return@transaction true
+            }
+        return@transaction false
     }
     override fun addWord(
         phonic: String,
@@ -187,14 +219,33 @@ class DataDaoImpl @Inject constructor() : DataDao {
             this.language = EntityLanguage[languageId]
         }.id.value
     }
-    override fun addSentence(languageId: Int, words: List<String>): Int = transaction {
+
+    override fun addFlag(flagImg: String, flagId: String): String  = transaction{
+        EntityFlag.new(flagId){
+            this.flag = flagImg
+        }.id.value
+    }
+
+    override fun getAllFlags(): List<Flag> = transaction{
+        EntityFlag.all().map {
+            Flag.fromEntity(it)
+        }
+    }
+
+    override fun getFlagById(flagId: String): Flag? = transaction{
+        EntityFlag.findById(flagId)
+    }?.let {Flag.fromEntity(it)}
+
+
+    override fun addSentence(languageId: Int, words: List<Int>): Int = transaction {
         val sentenceId = EntitySentence.new {
             this.language = EntityLanguage[languageId]
         }.id.value
-        words.map { word ->
-            EntityWord.find { (Words.language eq languageId) and (Words.word eq word) }.firstOrNull()
-        }.mapNotNull { word ->
-            addWordToSentence(sentenceId, word!!.id.value)
+        words.map{ wordId ->
+            EntitySentenceWordCrossRef.new {
+                this.word = EntityID(wordId, Words)
+                this.sentence = EntityID(sentenceId, Sentences)
+            }
         }
         return@transaction sentenceId
     }
@@ -214,8 +265,8 @@ class DataDaoImpl @Inject constructor() : DataDao {
     }
 
     override fun getLanguageById(languageId: Int, depth: Int): Language? = transaction {
-        EntityLanguage.findById(languageId)
-    }?.let { Language.fromEntity(it, depth) }
+        EntityLanguage.findById(languageId)?.let{ Language.fromEntity(it, depth) }
+    }
 
     override fun getUnit(nativeId: String, languageId: String, unitNum: Int, depth: Int): Unit? = transaction {
         EntityLanguage.find {
@@ -292,11 +343,58 @@ class DataDaoImpl @Inject constructor() : DataDao {
         EntitySentence.findById(sentenceId)
     }?.let { Sentence.fromEntity(it) }
 
+    override fun updateSentence(sentenceId: Int, languageId: Int, words: List<Int>): Int = transaction {
+        EntitySentenceWordCrossRef.find {
+            (SentenceWordCrossRefs.sentence eq sentenceId)
+        }.forEach {
+            it.run {
+                delete()
+            }
+        }
+
+        words.map{ wordId ->
+            EntitySentenceWordCrossRef.new {
+                this.word = EntityID(wordId, Words)
+                this.sentence = EntityID(sentenceId, Sentences)
+            }
+        }
+        EntitySentence[sentenceId].apply {
+            this.language = EntityLanguage[languageId]
+        }
+        return@transaction sentenceId
+    }
+
+    override fun updateWord(wordId: Int, phonic: String, sound: String, translatedSound: String, translateWord: String, text: String, languageId: Int): Int = transaction {
+        EntityWord[wordId].apply {
+            this.phonic = phonic
+            this.sound = sound
+            this.translatedSound = translatedSound
+            this.translatedWord = translateWord
+            this.word = text
+            this.language = EntityLanguage[languageId]
+        }.id.value
+    }
+    override fun updateSection(sectionId: Int, title: String, order: Int, lessonCount: Int, unitId: Int): Int = transaction {
+        val id = EntitySection[sectionId].apply {
+            this.title = title
+            this.order = min(updateSectionOrder(order, sectionId, this.order), order)
+            this.lessonCount = lessonCount
+            this.unit = EntityUnit[unitId]
+        }.id.value
+        EntitySectionProgress.find {
+            SectionsProgress.section eq sectionId
+        }.forEach {
+            it.apply {
+                this.currentLesson = min(this.currentLesson, lessonCount)
+            }
+        }
+        id
+    }
+
     override fun updateUnit(unitId: Int, title: String, order: Int, languageId: Int): Int = transaction {
-        val max = updateUnitOrder(order, languageId)
         EntityUnit[unitId].apply {
             this.title = title
-            this.order = min(max, order)
+            this.order = min(updateSectionOrder(order, unitId, this.order), order)
             this.language = EntityLanguage[languageId]
         }.id.value
     }
@@ -319,19 +417,19 @@ class DataDaoImpl @Inject constructor() : DataDao {
     override fun deleteLanguage(languageId: Int): Boolean = transaction {
         val eLanguage = EntityLanguage.findById(languageId)
         eLanguage?.run {
-            eLanguage.units.map { unit ->
-                deleteUnit(unit.id.value)
-            }
-            EntityWord.find { Words.language eq eLanguage.id }.forEach { word ->
-                word.run {
-                    delete()
-                }
-            }
-            EntitySentence.find { Sentences.language eq eLanguage.id }.forEach { sentence ->
-                sentence.run {
-                    delete()
-                }
-            }
+//            eLanguage.units.map { unit ->
+//                deleteUnit(unit.id.value)
+//            }
+//            EntityWord.find { Words.language eq eLanguage.id }.forEach { word ->
+//                word.run {
+//                    delete()
+//                }
+//            }
+//            EntitySentence.find { Sentences.language eq eLanguage.id }.forEach { sentence ->
+//                sentence.run {
+//                    delete()
+//                }
+//            }
             delete()
             return@transaction true
         }
@@ -341,9 +439,9 @@ class DataDaoImpl @Inject constructor() : DataDao {
     override fun deleteUnit(unitId: Int): Boolean = transaction {
         val eUnit = EntityUnit.find { (Units.id eq unitId) }.firstOrNull()
         eUnit?.run {
-            eUnit.sections.map { section ->
-                deleteSection(section.id.value)
-            }
+//            eUnit.sections.map { section ->
+//                deleteSection(section.id.value)
+//            }
             delete()
             return@transaction true
         }
@@ -353,18 +451,18 @@ class DataDaoImpl @Inject constructor() : DataDao {
     override fun deleteSection(sectionId: Int): Boolean = transaction {
         val eSection = EntitySection.find { (Sections.id eq sectionId) }.firstOrNull()
         eSection?.run {
-            EntitySectionWordCrossRef.find { SectionWordCrossRefs.section eq eSection.id }
-                .forEach { ref ->
-                    ref.run {
-                        delete()
-                    }
-                }
-            EntitySectionSentenceCrossRef.find { SectionSentenceCrossRefs.section eq eSection.id }
-                .forEach { ref ->
-                    ref.run {
-                        delete()
-                    }
-                }
+//            EntitySectionWordCrossRef.find { SectionWordCrossRefs.section eq eSection.id }
+//                .forEach { ref ->
+//                    ref.run {
+//                        delete()
+//                    }
+//                }
+//            EntitySectionSentenceCrossRef.find { SectionSentenceCrossRefs.section eq eSection.id }
+//                .forEach { ref ->
+//                    ref.run {
+//                        delete()
+//                    }
+//                }
             delete()
             return@transaction true
         }
@@ -389,16 +487,16 @@ class DataDaoImpl @Inject constructor() : DataDao {
         return@transaction false
     }
     override fun exists(id: Int, type: Any): Boolean = transaction {
-        when (type::class) {
-            EntityLanguage::class -> EntityLanguage
-            EntityUnit::class -> EntitySection
-            EntitySection::class -> EntityUnit
-            EntitySentence::class -> EntitySentence
-            EntityWord::class -> EntityWord
-            EntitySectionSentenceCrossRef::class -> EntitySectionSentenceCrossRef
-            EntitySectionWordCrossRef::class -> EntitySectionWordCrossRef
-            EntitySentenceWordCrossRef::class -> EntitySentenceWordCrossRef
-            else -> throw IllegalArgumentException("Unsupported data type: ${type::class.simpleName}")
+        when (type) {
+            EntityLanguage -> EntityLanguage
+            EntityUnit -> EntitySection
+            EntitySection -> EntityUnit
+            EntitySentence -> EntitySentence
+            EntityWord -> EntityWord
+            EntitySectionSentenceCrossRef -> EntitySectionSentenceCrossRef
+            EntitySectionWordCrossRef -> EntitySectionWordCrossRef
+            EntitySentenceWordCrossRef -> EntitySentenceWordCrossRef
+            else -> return@transaction false
         }.findById(id) != null
     }
 

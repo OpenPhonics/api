@@ -9,7 +9,7 @@ data class LanguageProgressRequest(
 )
 @Serializable
 data class XPRequest(
-    val xp: Short
+    val xp: Int
 )
 @Serializable
 data class StreakRequest(
@@ -17,7 +17,7 @@ data class StreakRequest(
 )
 @Serializable
 data class SectionProgressRequest(
-    val currentLesson: Short = 0,
+    val currentLesson: Int = 0,
     val isLegendary: Boolean,
     val learnedWords: List<Int>
 )

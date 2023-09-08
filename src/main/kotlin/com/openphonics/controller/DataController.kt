@@ -6,14 +6,10 @@ import com.openphonics.exception.UnauthorizedActivityException
 import com.openphonics.model.request.*
 import com.openphonics.model.response.*
 import com.openphonics.model.response.Unit
-import com.openphonics.utils.isNumeric
 import com.openphonics.data.dao.DataDaoImpl
-import com.openphonics.data.entity.data.EntityLanguage
-import com.openphonics.data.entity.data.EntitySection
-import com.openphonics.data.entity.data.EntityUnit
-import com.openphonics.data.entity.progress.EntityLanguageProgress
-import com.openphonics.data.entity.references.EntitySectionProgressLearnedWordCrossRef
+import com.openphonics.data.entity.data.*
 import com.openphonics.data.model.user.User
+import com.openphonics.utils.containsOnlyLetters
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -21,6 +17,18 @@ import javax.inject.Singleton
 class DataController @Inject constructor(
     private val dataDao: DataDaoImpl
 ) {
+    fun getAllLanguages(native: String, depth: DepthRequest): LanguageResponse{
+        return try {
+            validateDepthOrThrowException(depth.depth)
+            checkNativeExistsOrThrowException(native)
+            val languages = dataDao.getLanguages(native, depth.depth)
+            LanguageResponse.success(languages.map { Language.create(it)})
+        } catch (bre: BadRequestException) {
+            LanguageResponse.failed(bre.message)
+        } catch (uae: UnauthorizedActivityException) {
+            LanguageResponse.unauthorized(uae.message)
+        }
+    }
     fun getLanguage(languageId: Int, depth: DepthRequest): LanguageResponse {
         return try {
             validateDepthOrThrowException(depth.depth)
@@ -35,59 +43,18 @@ class DataController @Inject constructor(
             LanguageResponse.notFound(nfe.message)
         }
     }
-    fun getSection(sectionId: Int, depth: DepthRequest): SectionResponse {
-        return try {
-            validateDepthOrThrowException(depth.depth)
-            checkDataExistsOrThrowException(sectionId, EntitySection)
-            val section = dataDao.getSectionById(sectionId, depth.depth)!!
-            SectionResponse.success(Section.create(section))
-        } catch (bre: BadRequestException) {
-            SectionResponse.failed(bre.message)
-        } catch (uae: UnauthorizedActivityException) {
-            SectionResponse.unauthorized(uae.message)
-        } catch (nfe: NotFoundException) {
-            SectionResponse.notFound(nfe.message)
-        }
-    }
-    fun getUnit(unitId: Int, depth: DepthRequest): UnitResponse {
-        return try {
-            validateDepthOrThrowException(depth.depth)
-            checkDataExistsOrThrowException(unitId, EntityUnit)
-            val unit = dataDao.getUnitById(unitId, depth.depth)!!
-            UnitResponse.success(Unit.create(unit))
-        } catch (bre: BadRequestException) {
-            UnitResponse.failed(bre.message)
-        } catch (uae: UnauthorizedActivityException) {
-            UnitResponse.unauthorized(uae.message)
-        } catch (nfe: NotFoundException) {
-            UnitResponse.notFound(nfe.message)
-        }
-    }
-    fun getAllLanguages(native: String, depth: DepthRequest): LanguageResponse{
-        return try {
-            validateDepthOrThrowException(depth.depth)
-            checkNativeExistsOrThrowException(native)
-            val languages = dataDao.getLanguages(native, depth.depth)
-           LanguageResponse.success(languages.map { Language.create(it)})
-        } catch (bre: BadRequestException) {
-            LanguageResponse.failed(bre.message)
-        } catch (uae: UnauthorizedActivityException) {
-            LanguageResponse.unauthorized(uae.message)
-        }
-    }
-
     fun addLanguage(user: User, language: LanguageRequest): IntIdResponse {
         return try {
             val nativeId = language.nativeId
             val languageId  = language.languageId
             val languageName = language.languageName
             val flag = language.flag
-//            validateLanguageRequestOrThrowException(nativeId, languageId, languageName, flag)
-//            validateAdmin(user)
+            validateLanguageRequestOrThrowException(nativeId, languageId, languageName, flag)
+            validateAdmin(user)
             val responseId = dataDao.addLanguage(nativeId, languageId, languageName, flag)
             IntIdResponse.success(responseId)
         } catch (bre: BadRequestException) {
-           IntIdResponse.failed(bre.message)
+            IntIdResponse.failed(bre.message)
         } catch (uae: UnauthorizedActivityException) {
             IntIdResponse.unauthorized(uae.message)
         }
@@ -127,6 +94,20 @@ class DataController @Inject constructor(
         }
     }
 
+    fun getUnit(unitId: Int, depth: DepthRequest): UnitResponse {
+        return try {
+            validateDepthOrThrowException(depth.depth)
+            checkDataExistsOrThrowException(unitId, EntityUnit)
+            val unit = dataDao.getUnitById(unitId, depth.depth)!!
+            UnitResponse.success(Unit.create(unit))
+        } catch (bre: BadRequestException) {
+            UnitResponse.failed(bre.message)
+        } catch (uae: UnauthorizedActivityException) {
+            UnitResponse.unauthorized(uae.message)
+        } catch (nfe: NotFoundException) {
+            UnitResponse.notFound(nfe.message)
+        }
+    }
     fun addUnit(user: User, unit: UnitRequest): IntIdResponse {
         return try {
             val title = unit.title
@@ -175,35 +156,225 @@ class DataController @Inject constructor(
         }
     }
 
-//    fun addSection(section: SectionRequest): IntIdResponse {
-//
-//    }
-//    fun updateSection(section: SectionRequest): IntIdResponse {
-//
-//    }
-//    fun deleteSection(sectionId: Int): IntIdResponse {
-//
-//    }
-//
-//    fun addWord(word: WordRequest): IntIdResponse {
-//
-//    }
-//    fun updateWord(word: WordRequest): IntIdResponse {
-//
-//    }
-//    fun deleteWord(wordId: Int): IntIdResponse {
-//
-//    }
-//
-//    fun addSentence(sentence: SentenceRequest): IntIdResponse {
-//
-//    }
-//    fun updateSentence(sentence: SentenceRequest): IntIdResponse {
-//
-//    }
-//    fun deleteSentence(sentenceId: Int): IntIdResponse {
-//
-//    }
+    fun getSection(sectionId: Int, depth: DepthRequest): SectionResponse {
+        return try {
+            validateDepthOrThrowException(depth.depth)
+            checkDataExistsOrThrowException(sectionId, EntitySection)
+            val section = dataDao.getSectionById(sectionId, depth.depth)!!
+            SectionResponse.success(Section.create(section))
+        } catch (bre: BadRequestException) {
+            SectionResponse.failed(bre.message)
+        } catch (uae: UnauthorizedActivityException) {
+            SectionResponse.unauthorized(uae.message)
+        } catch (nfe: NotFoundException) {
+            SectionResponse.notFound(nfe.message)
+        }
+    }
+    fun addSection(user: User, section: SectionRequest): IntIdResponse {
+        return try {
+            val title = section.title
+            val order = section.order
+            val lessonCount = section.lessonCount
+            val unit = section.unitId
+            validateSectionRequestOrThrowException(title, order, lessonCount, unit)
+            validateAdmin(user)
+            val responseId = dataDao.addSection(title, order, lessonCount, unit)
+            IntIdResponse.success(responseId)
+        } catch (bre: BadRequestException) {
+            IntIdResponse.failed(bre.message)
+        } catch (uae: UnauthorizedActivityException) {
+            IntIdResponse.unauthorized(uae.message)
+        }
+    }
+    fun updateSection(user: User, sectionId: Int, section: SectionRequest): IntIdResponse {
+        return try {
+            val title = section.title
+            val order = section.order
+            val lessonCount = section.lessonCount
+            val unit = section.unitId
+            validateSectionRequestOrThrowException(title, order, lessonCount, unit)
+            validateAdmin(user)
+            val responseId = dataDao.updateSection(sectionId, title, order, lessonCount, unit)
+            IntIdResponse.success(responseId)
+        } catch (bre: BadRequestException) {
+            IntIdResponse.failed(bre.message)
+        } catch (uae: UnauthorizedActivityException) {
+            IntIdResponse.unauthorized(uae.message)
+        }
+    }
+    fun deleteSection(user: User, sectionId: Int): IntIdResponse {
+        return try {
+            checkDataExistsOrThrowException(sectionId, EntitySection)
+            validateAdmin(user)
+            if (dataDao.deleteSection(sectionId)) {
+                IntIdResponse.success(sectionId)
+            } else {
+                IntIdResponse.failed("Error Occurred")
+            }
+        } catch (uae: UnauthorizedActivityException) {
+            IntIdResponse.unauthorized(uae.message)
+        } catch (bre: BadRequestException) {
+            IntIdResponse.failed(bre.message)
+        } catch (nfe: NotFoundException) {
+            IntIdResponse.notFound(nfe.message)
+        }
+    }
+
+    fun getWord(wordId: Int): WordResponse {
+        return try {
+            checkDataExistsOrThrowException(wordId, EntityWord)
+            val word = dataDao.getWordById(wordId)!!
+            WordResponse.success(Word.create(word))
+        } catch (bre: BadRequestException) {
+            WordResponse.failed(bre.message)
+        } catch (uae: UnauthorizedActivityException) {
+            WordResponse.unauthorized(uae.message)
+        } catch (nfe: NotFoundException) {
+            WordResponse.notFound(nfe.message)
+        }
+    }
+    fun addWord(user: User, word: WordRequest): IntIdResponse {
+        return try {
+            val phonic = word.phonic
+            val sound = word.sound
+            val translatedSound = word.translatedSound
+            val translateWord = word.translatedWord
+            val text = word.word
+            val languageId = word.languageId
+            validateWordRequestOrThrowException(phonic, sound, translatedSound, translateWord, text, languageId)
+            validateAdmin(user)
+            val responseId = dataDao.addWord(phonic, sound ,translatedSound, translateWord, text, languageId)
+            IntIdResponse.success(responseId)
+        } catch (bre: BadRequestException) {
+            IntIdResponse.failed(bre.message)
+        } catch (uae: UnauthorizedActivityException) {
+            IntIdResponse.unauthorized(uae.message)
+        }
+    }
+    fun updateWord(user: User, wordId: Int, word: WordRequest): IntIdResponse {
+        return try {
+            val phonic = word.phonic
+            val sound = word.sound
+            val translatedSound = word.translatedSound
+            val translateWord = word.translatedWord
+            val text = word.word
+            val languageId = word.languageId
+            validateWordRequestOrThrowException(phonic, sound, translatedSound, translateWord, text, languageId)
+            validateAdmin(user)
+            val responseId = dataDao.updateWord(wordId, phonic, sound ,translatedSound, translateWord, text, languageId)
+            IntIdResponse.success(responseId)
+        } catch (bre: BadRequestException) {
+            IntIdResponse.failed(bre.message)
+        } catch (uae: UnauthorizedActivityException) {
+            IntIdResponse.unauthorized(uae.message)
+        }
+    }
+    fun deleteWord(user: User, wordId: Int): IntIdResponse {
+        return try {
+            checkDataExistsOrThrowException(wordId, EntityWord)
+            validateAdmin(user)
+            if (dataDao.deleteWord(wordId)) {
+                IntIdResponse.success(wordId)
+            } else {
+                IntIdResponse.failed("Error Occurred")
+            }
+        } catch (uae: UnauthorizedActivityException) {
+            IntIdResponse.unauthorized(uae.message)
+        } catch (bre: BadRequestException) {
+            IntIdResponse.failed(bre.message)
+        } catch (nfe: NotFoundException) {
+            IntIdResponse.notFound(nfe.message)
+        }
+    }
+
+    fun getSentence(sentenceId: Int): SentenceResponse {
+        return try {
+            checkDataExistsOrThrowException(sentenceId, EntitySentence)
+            val sentence = dataDao.getSentenceById(sentenceId)!!
+            SentenceResponse.success(Sentence.create(sentence))
+        } catch (bre: BadRequestException) {
+            SentenceResponse.failed(bre.message)
+        } catch (uae: UnauthorizedActivityException) {
+            SentenceResponse.unauthorized(uae.message)
+        } catch (nfe: NotFoundException) {
+            SentenceResponse.notFound(nfe.message)
+        }
+    }
+    fun addSentence(user: User, sentence: SentenceRequest): IntIdResponse {
+        return try {
+            val language = sentence.languageId
+            val words = sentence.words
+            validateSentenceRequestOrThrowException(language, words)
+            validateAdmin(user)
+            val responseId = dataDao.addSentence(language, words)
+            IntIdResponse.success(responseId)
+        } catch (bre: BadRequestException) {
+            IntIdResponse.failed(bre.message)
+        } catch (uae: UnauthorizedActivityException) {
+            IntIdResponse.unauthorized(uae.message)
+        }
+    }
+    fun updateSentence(user: User, sentenceId: Int, sentence: SentenceRequest): IntIdResponse {
+        return try {
+            val language = sentence.languageId
+            val words = sentence.words
+            validateSentenceRequestOrThrowException(language, words)
+            validateAdmin(user)
+            val responseId = dataDao.updateSentence(sentenceId, language, words)
+            IntIdResponse.success(responseId)
+        } catch (bre: BadRequestException) {
+            IntIdResponse.failed(bre.message)
+        } catch (uae: UnauthorizedActivityException) {
+            IntIdResponse.unauthorized(uae.message)
+        }
+    }
+    fun deleteSentence(user: User, sentenceId: Int): IntIdResponse {
+        return try {
+            validateAdmin(user)
+            if (dataDao.deleteWord(sentenceId)) {
+                IntIdResponse.success(sentenceId)
+            } else {
+                IntIdResponse.failed("Error Occurred")
+            }
+        } catch (uae: UnauthorizedActivityException) {
+            IntIdResponse.unauthorized(uae.message)
+        } catch (bre: BadRequestException) {
+            IntIdResponse.failed(bre.message)
+        } catch (nfe: NotFoundException) {
+            IntIdResponse.notFound(nfe.message)
+        }
+    }
+
+
+    fun getAllFlags(): FlagResponse{
+        val flags = dataDao.getAllFlags()
+        return FlagResponse.success(flags.map { Flag.create(it)})
+    }
+    fun getFlag(flagId: String): FlagResponse {
+        return try {
+            if (!dataDao.flagExists(flagId)){
+                throw BadRequestException("Flag does not exist")
+            }
+            val flag = dataDao.getFlagById(flagId)!!
+            FlagResponse.success(Flag.create(flag))
+        } catch (bre: BadRequestException) {
+            FlagResponse.failed(bre.message)
+        }
+    }
+    fun addFlag(user: User, flag: FlagRequest): StrIdResponse {
+        return try {
+            val img = flag.flag
+            val id = flag.id
+            validateFlagRequestOrThrowException(img, id)
+            validateAdmin(user)
+            val responseId = dataDao.addFlag(img, id)
+            StrIdResponse.success(responseId)
+        } catch (bre: BadRequestException) {
+            StrIdResponse.failed(bre.message)
+        } catch (uae: UnauthorizedActivityException) {
+            StrIdResponse.unauthorized(uae.message)
+        }
+    }
 
     private fun validateDepthOrThrowException(depth: Int) {
         val message = when {
@@ -212,14 +383,13 @@ class DataController @Inject constructor(
         }
         throw BadRequestException(message)
     }
-
     private fun validateLanguageRequestOrThrowException(nativeId: String, languageId: String, languageName: String, flag: String){
         val message = when {
             nativeId.length != 2 -> "Native language id must be 2 characters"
             languageId.length != 2 -> "Language id must be 2 characters"
             flag.length != 2 -> "Flag id must be 2 characters"
             languageName.length > 30 -> "Language name is too long"
-            !languageName.isNumeric() -> "Language name cannot contain numbers"
+            !languageName.containsOnlyLetters() -> "Language name cannot contain numbers"
             !dataDao.flagExists(flag) -> "Flag does not exist"
             else -> return
         }
@@ -227,9 +397,50 @@ class DataController @Inject constructor(
     }
     private fun validateUnitRequestOrThrowException(title: String, order: Int, languageId: Int){
         val message = when {
-            !title.isNumeric()-> "'title' cannot contain numbers"
+            !title.containsOnlyLetters()-> "'title' cannot contain numbers"
+            title.length > 30 -> "'title' cannot contain more then 30 characters"
             order < 0 -> "'order' cannot be negative"
             !dataDao.exists(languageId, EntityLanguage) -> "Language does not exist"
+            else -> return
+        }
+        throw BadRequestException(message)
+    }
+    private fun validateSectionRequestOrThrowException(title: String, order: Int, lessonCount: Int, unitId: Int){
+        val message = when {
+            !title.containsOnlyLetters()-> "'title' cannot contain numbers"
+            title.length > 30 -> "'title' cannot contain more then 30 characters"
+            order < 0 -> "'order' cannot be negative"
+            lessonCount < 1 -> "each section must contain at least one lesson"
+            !dataDao.exists(unitId, EntityUnit) -> "Unit does not exist"
+            else -> return
+        }
+        throw BadRequestException(message)
+    }
+    private fun validateWordRequestOrThrowException(phonic: String, sound: String, translatedSound: String, translateWord: String, text: String, languageId: Int){
+        val message = when {
+            !phonic.containsOnlyLetters() -> "phonic cannot contain numbers"
+            !text.containsOnlyLetters()  -> "word cannot contain numbers"
+            !translateWord.containsOnlyLetters() -> "translated word cannot contain numbers"
+            phonic.length > 100 || text.length > 100 || translateWord.length >100 -> "text is too long"
+            sound.length > 300 || translatedSound.length > 300 -> "link text is too long"
+            !dataDao.exists(languageId, EntityLanguage) -> "Language does not exist"
+            else -> return
+        }
+        throw BadRequestException(message)
+    }
+    private fun validateSentenceRequestOrThrowException(languageId: Int, words: List<Int>){
+        val message = when {
+            words.any {!dataDao.exists(it, EntityWord)} -> "Word does not exist"
+            !dataDao.exists(languageId, EntityLanguage) -> "Language does not exist"
+            else -> return
+        }
+        throw BadRequestException(message)
+    }
+    private fun validateFlagRequestOrThrowException(img: String, id: String){
+        val message = when {
+            id.length != 2 -> "Id must be 2 characters"
+            !id.containsOnlyLetters() -> "Id cannot contain numbers"
+            dataDao.flagExists(id) -> "Flag already exist"
             else -> return
         }
         throw BadRequestException(message)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Shreyas Patil
+ * Copyright 2020 Shreyas Patil
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,11 @@
  * limitations under the License.
  */
 
-package com.openphonics.plugin
+package com.openphonics.testutils
 
-import io.ktor.http.ContentType
-import io.ktor.serialization.kotlinx.json.*
-import io.ktor.server.application.*
-import io.ktor.server.plugins.contentnegotiation.*
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-fun Application.configureContentNegotiation() {
-    install(ContentNegotiation) {
-        json(
-            json = Json {
-                prettyPrint = true
-            },
-            contentType = ContentType.Application.Json
-        )
-    }
-}
+inline fun <reified T> T.toJson(): String = Json.encodeToString(this)
+
+inline fun <reified T> String?.toModel(): T = this!!.let { json -> Json.decodeFromString(json) }

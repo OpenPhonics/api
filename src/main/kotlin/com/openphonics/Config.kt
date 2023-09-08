@@ -27,6 +27,7 @@ import io.ktor.util.*
 @KtorExperimentalAPI
 class Config constructor(config: ApplicationConfig) {
     val SECRET_KEY = config.property("key.secret").getString()
+    val ADMIN_KEY = config.property("key.admin").getString()
 
     val DATABASE_HOST = config.property("database.host").getString()
     val DATABASE_PORT = config.property("database.port").getString()

@@ -16,9 +16,18 @@
 
 package com.openphonics.utils
 
-fun String.isAlphaNumeric() = matches("[a-zA-Z ]+".toRegex())
+fun String.isAlphaNumeric(): Boolean {
+    return all { it.isLetterOrDigit() }
+}
+//fun String.isNumeric(): Boolean {
+//    return !all { !it.isDigit() }
+//}
 
-fun String.isNumeric(): Boolean = (Regex("\\d")).containsMatchIn(this)
+fun String.containsOnlyLetters(): Boolean {
+
+    return !this.contains(Regex("[0-9!\"#$%&'()*+,-./:;\\\\<=>?@\\[\\]^_`{|}~]"))
+//    return this.matches(Regex("[\\p{L}]"))
+}
 
 fun String.isFullName(): Boolean {
     var whitespaceCount = 0

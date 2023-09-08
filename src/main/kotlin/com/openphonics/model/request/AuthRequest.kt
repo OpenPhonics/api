@@ -22,15 +22,29 @@ import kotlinx.serialization.Serializable
  * Model for getting API request body parameters for authentication.
  */
 @Serializable
-data class SignUpRequest(
+data class UserSignUpRequest(
     val name: String,
     val classCode: String,
     val native: String,
     val language: Int,
-    val isAdmin: Boolean,
 )
+@Serializable
+data class AdminSignUpRequest(
+    val name: String,
+    val classCode: String,
+){
+    companion object {
+        const val ADMIN_NATIVE = "en"
+    }
+}
 @Serializable
 data class LoginRequest(
     val name: String,
+    val classCode: String,
+)
+
+@Serializable
+data class ClassroomRequest(
+    val className: String,
     val classCode: String,
 )

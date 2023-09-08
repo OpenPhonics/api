@@ -2,11 +2,24 @@ package com.openphonics.model.response
 
 import kotlinx.serialization.Serializable
 
+
+@Serializable
+data class Flag(
+    val flag: String,
+    val id: String
+){
+    companion object {
+        fun create(flag: com.openphonics.data.model.data.Flag  ): Flag = Flag(
+            flag.flag,
+            flag.id
+        )
+    }
+}
 @Serializable
 data class Language (
     val nativeId: String,
-    val unitId: String,
-    val unitName: String,
+    val languageId: String,
+    val languageName: String,
     val flag: String,
     val units: List<Unit>,
     val hasData: Boolean,
@@ -32,6 +45,7 @@ data class Unit(
     val order: Int,
     val sections: List<Section>,
     val hasData: Boolean,
+    val language: Int,
     val id: Int
 ){
     companion object {
@@ -42,6 +56,7 @@ data class Unit(
               Section.create(it)
             },
             unit.hasData,
+            unit.language,
             unit.id
         )
     }
@@ -54,6 +69,7 @@ data class Section (
     val words: List<Word>,
     val sentences: List<Sentence>,
     val hasData: Boolean,
+    val unit: Int,
     val id: Int
 ) {
     companion object {
@@ -68,6 +84,7 @@ data class Section (
                 Sentence.create(it)
             },
             section.hasData,
+            section.unit,
             section.id
         )
     }
@@ -108,7 +125,40 @@ data class Sentence(
         )
     }
 }
+@Serializable
+data class FlagResponse(
+    override val status: State,
+    override val message: String,
+    val flag: List<Flag> = emptyList()
+)  : Response {
+    companion object {
+        fun unauthorized(message: String) = FlagResponse(
+            State.UNAUTHORIZED,
+            message
+        )
 
+        fun success(flag: List<Flag>) = FlagResponse(
+            State.SUCCESS,
+            "Task successful",
+            flag
+        )
+        fun success(flag: Flag) = FlagResponse(
+            State.SUCCESS,
+            "Task successful",
+            listOf(flag)
+        )
+
+        fun failed(message: String) = FlagResponse(
+            State.FAILED,
+            message
+        )
+
+        fun notFound(message: String) = FlagResponse(
+            State.NOT_FOUND,
+            message
+        )
+    }
+}
 
 @Serializable
 data class LanguageResponse(

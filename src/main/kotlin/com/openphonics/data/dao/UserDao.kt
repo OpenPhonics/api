@@ -30,18 +30,21 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
+import javax.swing.text.html.parser.Entity
 
 interface UserDao {
 
     fun addClass(classCode: String, className: String): String
-    fun addUserWithoutLanguage(name: String, classCode: String, native: String, isAdmin: Boolean): User
-    fun addUser(name: String, classCode: String, native: String, isAdmin: Boolean, language: Int): User
+    fun addAdmin(name: String, classCode: String, native: String): User
+    fun addUser(name: String, classCode: String, native: String, language: Int): User
     fun findByUUID(uuid: UUID): User?
     fun findByNameAndClassCode(name: String, classCode: String): User?
     fun exists(uuid: UUID): Boolean
     fun isNameAvailable(name: String, classCode: String): Boolean
 
     fun doesClassCodeExists(classCode: String): Boolean
+
+    fun deleteByID(id: String): Boolean
 }
 
 
@@ -53,22 +56,22 @@ class UserDaoImpl @Inject constructor() : UserDao {
        }.id.value
     }
 
-    override fun addUserWithoutLanguage(name: String, classCode: String, native: String, isAdmin: Boolean): User= transaction {
+    override fun addAdmin(name: String, classCode: String, native: String): User= transaction {
         EntityUser.new {
             this.name = name
             this.classCode = EntityID(classCode, Classrooms)
             this.native = native
-            this.isAdmin = isAdmin
+            this.isAdmin = true
             this.currentLanguage = null
         }
     }.let { User.fromEntity(it)}
-    override fun addUser(name: String, classCode: String, native: String, isAdmin: Boolean, language: Int): User = transaction {
+    override fun addUser(name: String, classCode: String, native: String, language: Int): User = transaction {
 
         val user = EntityUser.new {
             this.name = name
             this.classCode = EntityID(classCode, Classrooms)
             this.native = native
-            this.isAdmin = isAdmin
+            this.isAdmin = false
             this.currentLanguage = null
         }
         val lang = EntityLanguageProgress.new {
@@ -107,6 +110,16 @@ class UserDaoImpl @Inject constructor() : UserDao {
     override fun doesClassCodeExists(classCode: String): Boolean = transaction {
             EntityClassroom.findById(classCode) != null
         }
+
+    override fun deleteByID(id: String): Boolean = transaction {
+        EntityUser.findById(UUID.fromString(id))?.let{
+            it.run {
+                delete()
+                return@transaction true
+            }
+        }
+        return@transaction false
+    }
 
     override fun exists(uuid: UUID): Boolean = findByUUID(uuid) != null
 

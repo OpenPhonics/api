@@ -18,18 +18,21 @@ package com.openphonics.controller
 
 import com.openphonics.auth.Encryptor
 import com.openphonics.auth.JWTController
+import com.openphonics.data.dao.DataDao
+import com.openphonics.data.dao.UserDao
+import com.openphonics.data.entity.data.EntityLanguage
+import com.openphonics.data.model.user.User
+import com.openphonics.di.module.AdminKey
 import com.openphonics.exception.BadRequestException
 import com.openphonics.exception.NotFoundException
 import com.openphonics.exception.UnauthorizedActivityException
 import com.openphonics.model.response.AuthResponse
-import com.openphonics.model.response.IntIdResponse
 import com.openphonics.model.response.StrIdResponse
+import com.openphonics.utils.containsOnlyLetters
 import com.openphonics.utils.isAlphaNumeric
 import com.openphonics.utils.isFullName
-import com.openphonics.data.dao.DataDao
-import com.openphonics.data.dao.UserDao
-import com.openphonics.data.entity.data.EntityLanguage
-import io.ktor.util.KtorExperimentalAPI
+import io.ktor.util.*
+import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -39,50 +42,68 @@ import javax.inject.Singleton
 @KtorExperimentalAPI
 @Singleton
 class AuthController @Inject constructor(
+    @AdminKey private val adminKey: String,
     private val userDao: UserDao,
     private val dataDao: DataDao,
     private val jwt: JWTController,
-    private val encryptor: Encryptor
+    private val encryptor: Encryptor,
 ) {
-
-    fun register(name: String, classCode: String, native: String, isAdmin: Boolean, language: Int): AuthResponse {
+    fun registerUser(name: String, classCode: String, native: String, language: Int): AuthResponse {
         return try {
             val encryptedCode = encryptor.encrypt(classCode)
             validateCredentialsOrThrowException(name, classCode)
-//            validateLanguageExists(language)
+            validateNativeOrThrowException(native)
+            validateLanguageExists(language)
             if (!userDao.isNameAvailable(name, encryptor.encrypt(classCode))) {
                 throw BadRequestException("name is not available")
             }
-            if (!userDao.doesClassCodeExists(encryptedCode)) {
+            if (!userDao.doesClassCodeExists(encryptedCode) || encryptedCode == adminKey) {
                 throw BadRequestException("Invalid class code")
             }
-//            val langExists = !dataDao.exists(language, EntityLanguage)
-//            if (langExists && isAdmin){
-            val user = userDao.addUserWithoutLanguage(name, encryptedCode, native, isAdmin)
-            AuthResponse.success(jwt.sign(user.id), "New user created")
-//            } else if (langExists){
-//                throw BadRequestException("Language does not exist")
-//            } else {
-//                val user = userDao.addUser(name, encryptedCode, native, isAdmin, language)
-//                AuthResponse.success(jwt.sign(user.id), "New user created")
-//            }
-//            throw BadRequestException("Language does not exist")
+            val user = userDao.addUser(name, encryptedCode, native, language)
+            AuthResponse.success(jwt.sign(user.id), encryptedCode)
         } catch (bre: BadRequestException) {
             AuthResponse.failed(bre.message)
         } catch (nfe: NotFoundException) {
             AuthResponse.failed(nfe.message)
         }
     }
-    private fun validateLanguageExists(language: Int){
-        if (!dataDao.exists(language, String)) {
-            throw NotFoundException("Data not exist with ID '$language'")
+    fun registerAdmin(name: String, classCode: String, native: String): AuthResponse {
+        return try {
+            val encryptedCode = encryptor.encrypt(classCode)
+            validateCredentialsOrThrowException(name, classCode)
+            validateNativeOrThrowException(native)
+            if (!userDao.isNameAvailable(name, encryptor.encrypt(classCode))) {
+                throw BadRequestException("name is not available")
+            }
+            if (!userDao.doesClassCodeExists(encryptedCode) || encryptedCode != adminKey) {
+                throw BadRequestException("Invalid class code")
+            }
+            val user = userDao.addAdmin(name, encryptedCode, native)
+            AuthResponse.success(jwt.sign(user.id), encryptedCode)
+        } catch (bre: BadRequestException) {
+            AuthResponse.failed(bre.message)
+        } catch (nfe: NotFoundException) {
+            AuthResponse.failed(nfe.message)
         }
     }
-
+    fun delete(user: User): StrIdResponse {
+        return try {
+            if (!userDao.exists(UUID.fromString(user.id))){
+                throw NotFoundException("User does not exist")
+            }
+            if (userDao.deleteByID(user.id)) {
+                StrIdResponse.success(user.id)
+            } else {
+                StrIdResponse.failed("Error Occurred")
+            }
+        } catch (nfe: NotFoundException) {
+            StrIdResponse.failed(nfe.message)
+        }
+    }
     fun login(name: String, classCode: String): AuthResponse {
         return try {
             validateCredentialsOrThrowException(name, classCode)
-
             val user = userDao.findByNameAndClassCode(name, encryptor.encrypt(classCode))
                 ?: throw UnauthorizedActivityException("Invalid credentials")
             AuthResponse.success(jwt.sign(user.id), "Login successful")
@@ -92,11 +113,17 @@ class AuthController @Inject constructor(
             AuthResponse.unauthorized(uae.message)
         }
     }
-
-    fun addClass(classCode: String, className: String): StrIdResponse {
+    fun addClass(user: User, classCode: String, className: String): StrIdResponse {
         return try {
-//            validateClass(classCode, className)
-            val responseId = userDao.addClass(encryptor.encrypt(classCode), className)
+            val encryptedCode = encryptor.encrypt(classCode)
+            validateClass(classCode, className)
+            if (!user.isAdmin){
+                throw UnauthorizedActivityException("User must be admin to add classroom")
+            }
+            if (userDao.doesClassCodeExists(encryptedCode)) {
+                throw BadRequestException("Class code has already been used")
+            }
+            val responseId = userDao.addClass(encryptedCode, className)
             StrIdResponse.success(responseId)
         } catch (bre: BadRequestException) {
             StrIdResponse.failed(bre.message)
@@ -104,22 +131,34 @@ class AuthController @Inject constructor(
             StrIdResponse.unauthorized(uae.message)
         }
     }
+    private fun validateLanguageExists(language: Int){
+        if (!dataDao.exists(language, EntityLanguage)) {
+            throw NotFoundException("Data not exist with ID '$language'")
+        }
+    }
     private fun validateClass(classCode: String, className: String){
         val message = when {
             classCode.length !=6 -> "Class code length must be 6 characters"
             classCode.isAlphaNumeric() -> "Class code must be alpha numeric"
             className.length > 30 -> "Class name must be less then 30 characters long"
+            !className.containsOnlyLetters() -> "Class name cannot contain numbers or special characters"
             else -> return
         }
-
         throw BadRequestException(message)
     }
-
+    private fun validateNativeOrThrowException(native: String){
+        val message = when {
+            native.length != 2 -> "native must be 2 characters"
+            !native.containsOnlyLetters() -> "native cannot contain numbers or special characters"
+            else -> return
+        }
+        throw BadRequestException(message)
+    }
     private fun validateCredentialsOrThrowException(name: String, classCode: String) {
         val message = when {
             (name.isBlank() or classCode.isBlank()) -> "name or classCode should not be blank"
             (name.length !in (4..30)) -> "name should be of min 4 and max 30 character in length"
-            (classCode.length !in (6..50)) -> "Class code should be 6 digits long"
+            classCode.length != 6 -> "Class code should be 6 digits long"
             (!name.isFullName()) -> "No special characters allowed in name"
             else -> return
         }

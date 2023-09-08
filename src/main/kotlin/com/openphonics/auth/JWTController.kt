@@ -19,6 +19,7 @@ package com.openphonics.auth
 import com.auth0.jwt.JWT
 import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.algorithms.Algorithm
+import com.openphonics.di.module.AdminKey
 import com.openphonics.di.module.SecretKey
 import javax.inject.Inject
 

@@ -1,10 +1,7 @@
-POST http://localhost:8080/data
+GET http://localhost:8000/data/languages/5
 Content-Type: application/json
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJodHRwczovL2FwaS5vcGVucGhvbmljcy5jb20iLCJpc3MiOiJPcGVuUGhvbmljcy1KV1QtSXNzdWVyIiwidXNlcklkIjoiNWJlMTc4YmMtMjRhOC00NTRkLTg2NzYtYmNkM2UzNDBlNmE5In0.QX4e0fLJjUeaSd2s25KlRcDqC9XsrCSt8ItR5XXCaic
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJPcGVuUGhvbmljcy1KV1QtSXNzdWVyIiwiYXVkIjoiaHR0cHM6Ly9hcGkub3BlbnBob25pY3MuY29tIiwidXNlcklkIjoiZmVmYzhkYzAtOWYyNC00Y2U5LWEwNTktN2EyYWMyNDZmYzE2In0.e02zsgQRMdILOZ3GfhvOcGREcixetI7x2lGUTDkye60
 
 {
-    "nativeId": "en",
-    "languageId": "ta",
-    "languageName": "Tamil",
-    "flag": "in"
+  "depth": 2
 }

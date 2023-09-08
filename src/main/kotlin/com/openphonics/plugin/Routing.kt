@@ -17,6 +17,8 @@
 package com.openphonics.plugin
 
 import com.openphonics.route.auth.AuthApi
+import com.openphonics.route.data.DataApi
+import com.openphonics.route.progress.ProgressApi
 import io.ktor.server.application.*
 import io.ktor.server.resources.*
 import io.ktor.server.routing.*
@@ -28,6 +30,7 @@ fun Application.configureRouting() {
     install(Resources)
     routing {
         AuthApi()
-
+        DataApi()
+        ProgressApi()
     }
 }
