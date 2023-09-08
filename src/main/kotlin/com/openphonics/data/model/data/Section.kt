@@ -10,6 +10,7 @@ data class Section (
     val words: List<Word>,
     val sentences: List<Sentence>,
     val hasData: Boolean,
+    val unit: Int,
     val id: Int
 ) {
     companion object {
@@ -28,6 +29,7 @@ data class Section (
                     Sentence.fromEntity(it)
                 } else emptyList(),
             depth > 0,
+            entity.unit.id.value,
             entity.id.value
         )
     }

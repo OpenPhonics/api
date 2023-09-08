@@ -34,7 +34,7 @@ object Testing {
     const val INVALID_NUMERIC_TITLE = "B4 Wo4rs"
     const val INVALID_LONG_TITLE = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 
-    const val VALID_ORDER = 1
+    const val VALID_ORDER = 0
     const val INVALID_ORDER = -1
 
     const val VALID_LESSON_COUNT = 2
@@ -60,6 +60,15 @@ object Testing {
     const val INVALID_LONG_NAME = "AdvaitAdvait SurajUnnikrishnans"
     const val INVALID_NUMERIC_NAME = "Abd4 hello"
     const val INVALID_NO_SPACE_NAME = "Advit"
+
+    const val VALID_PHONIC = "həˈləʊ"
+    const val INVALID_PHONIC = "hte4t"
+    const val VALID_WORD = "hello"
+    const val INVALID_WORD= "he11o"
+    const val VALID_TRANSLATED_WORD = "வணக்கம்"
+    const val INVALID_TRANSLATED_WORD = "வணக4்கம்"
+    const val VALID_SOUND = "https://api.dictionaryapi.dev/media/pronunciations/en/hello-au.mp3"
+    const val VALID_TRANSLATED_SOUND = "https://api.dictionaryapi.dev/media/pronunciations/en/hello-au.mp3"
 }
 
 class ApplicationTest {

@@ -6,6 +6,7 @@ data class Unit(
     val order: Int,
     val sections: List<Section>,
     val hasData: Boolean,
+    val language: Int,
     val id: Int
 ){
     companion object {
@@ -21,6 +22,7 @@ data class Unit(
                 }
             else emptyList(),
             depth > 0,
+            entity.language.id.value,
             entity.id.value
         )
     }
