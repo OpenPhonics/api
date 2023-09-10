@@ -195,11 +195,63 @@ private fun Route.deleteSectionById(controller: Lazy<DataController>){
         call.respond(response.code, sectionResponse)
     }
 }
+private fun Route.postWordsToSection(controller: Lazy<DataController>){
+    post<Data.Section.Id.Word>{
+        val principal = call.principal<UserPrincipal>()
+            ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
+        val wordsSection = runCatching { call.receive<WordSectionRequest>() }.getOrElse {
+            throw BadRequestException(FailureMessages.MESSAGE_MISSING_DATA)
+        }
+        val wordSectionResponse = controller.get().addWordToSection(principal.user, wordsSection)
+        val response = generateHttpResponse(wordSectionResponse)
+        call.respond(response.code, wordSectionResponse)
+    }
+}
+private fun Route.postSentencesToSection(controller: Lazy<DataController>){
+    post<Data.Section.Id.Sentence>{
+        val principal = call.principal<UserPrincipal>()
+            ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
+        val sentencesSection = runCatching { call.receive<SentenceSectionRequest>() }.getOrElse {
+            throw BadRequestException(FailureMessages.MESSAGE_MISSING_DATA)
+        }
+        val wordSectionResponse = controller.get().addSentenceToSection(principal.user, sentencesSection)
+        val response = generateHttpResponse(wordSectionResponse)
+        call.respond(response.code, wordSectionResponse)
+    }
+}
+private fun Route.deleteWordsFromSection(controller: Lazy<DataController>){
+    delete<Data.Section.Id.Word>{
+        val principal = call.principal<UserPrincipal>()
+            ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
+        val wordsSection = runCatching { call.receive<WordSectionRequest>() }.getOrElse {
+            throw BadRequestException(FailureMessages.MESSAGE_MISSING_DATA)
+        }
+        val wordSectionResponse = controller.get().removeWordToSection(principal.user, wordsSection)
+        val response = generateHttpResponse(wordSectionResponse)
+        call.respond(response.code, wordSectionResponse)
+    }
+}
+private fun Route.deleteSentencesFromSection(controller: Lazy<DataController>){
+    delete<Data.Section.Id.Sentence>{
+        val principal = call.principal<UserPrincipal>()
+            ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
+        val sentencesSection = runCatching { call.receive<SentenceSectionRequest>() }.getOrElse {
+            throw BadRequestException(FailureMessages.MESSAGE_MISSING_DATA)
+        }
+        val wordSectionResponse = controller.get().removeSentenceToSection(principal.user, sentencesSection)
+        val response = generateHttpResponse(wordSectionResponse)
+        call.respond(response.code, wordSectionResponse)
+    }
+}
 private fun Route.sectionOperations(controller: Lazy<DataController>){
     postSection(controller)
     getSectionById(controller)
     updateSectionById(controller)
     deleteSectionById(controller)
+    postWordsToSection(controller)
+    postSentencesToSection(controller)
+    deleteWordsFromSection(controller)
+    deleteSentencesFromSection(controller)
 }
 
 

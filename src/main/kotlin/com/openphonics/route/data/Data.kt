@@ -12,6 +12,8 @@ object Routing {
     const val FLAGS = "flags"
     const val ID = "{id}"
     const val CREATE = "new"
+    const val WORD = "word"
+    const val SENTENCE = "sentence"
 
 }
 @Resource(Routing.DATA)
@@ -42,7 +44,12 @@ class Data(){
     @Resource(Routing.SECTIONS)
     class Section(val parent: Data = Data()){
         @Resource(Routing.ID)
-        class Id(val parent: Section = Section(),  val id: Int)
+        class Id(val parent: Section = Section(),  val id: Int){
+            @Resource(Routing.WORD)
+            class Word(val parent: Id)
+            @Resource(Routing.SENTENCE)
+            class Sentence(val parent: Id)
+        }
         @Resource(Routing.CREATE)
         class Create(val parent: Section = Section())
     }

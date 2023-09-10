@@ -46,3 +46,15 @@ data class FlagRequest(
     val flag: String,
     val id: String
 )
+
+@Serializable
+data class WordSectionRequest(
+    val sectionId: Int,
+    val words: List<Int>
+)
+
+@Serializable
+data class SentenceSectionRequest(
+    val sectionId: Int,
+    val sentences: List<Int>
+)

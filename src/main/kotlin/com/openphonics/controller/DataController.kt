@@ -12,6 +12,8 @@ import com.openphonics.data.model.user.User
 import com.openphonics.utils.containsOnlyLetters
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.openphonics.data.model.data.Section as SectionModel
+import com.openphonics.data.model.data.Unit as UnitModel
 
 @Singleton
 class DataController @Inject constructor(
@@ -342,6 +344,129 @@ class DataController @Inject constructor(
             IntIdResponse.failed(bre.message)
         } catch (nfe: NotFoundException) {
             IntIdResponse.notFound(nfe.message)
+        }
+    }
+
+    fun addWordToSection(user: User, wordsSection: WordSectionRequest): IntIdResponse {
+        return try {
+            val sectionId = wordsSection.sectionId
+            val words = wordsSection.words
+            validateAdmin(user)
+            if  (!dataDao.exists(sectionId, EntitySection)){
+                throw BadRequestException("Section does not exist")
+            }
+            val section = dataDao.getSectionById(sectionId, SectionModel.SECTIONS_WITH_LESSON_DATA)!!
+            val sectionWords = section.words.map {
+                it.id
+            }
+            val sectionLanguage = dataDao.getUnitById(section.unit, UnitModel.UNIT)!!.language
+            words.forEach {word->
+                if (sectionWords.contains(word)){
+                    throw BadRequestException("Section already contains word")
+                }
+                if (!dataDao.exists(word, EntityWord)){
+                    throw BadRequestException("Word does not exist")
+
+                } else if (dataDao.getWordById(word)!!.language != sectionLanguage){
+                    throw BadRequestException("Word language does not match section language")
+                }
+            }
+            words.forEach {word->
+                dataDao.addWordToSection(word, sectionId)
+            }
+            IntIdResponse.success(sectionId)
+        } catch (bre: BadRequestException) {
+            IntIdResponse.failed(bre.message)
+        } catch (uae: UnauthorizedActivityException) {
+            IntIdResponse.unauthorized(uae.message)
+        }
+    }
+    fun removeWordToSection(user: User, wordsSection: WordSectionRequest): IntIdResponse{
+        return try {
+            val sectionId = wordsSection.sectionId
+            val words = wordsSection.words
+            validateAdmin(user)
+            if  (!dataDao.exists(sectionId, EntitySection)){
+                throw BadRequestException("Section does not exist")
+            }
+            val section = dataDao.getSectionById(sectionId, SectionModel.SECTIONS_WITH_LESSON_DATA)!!
+            val sectionWords = section.words.map {
+                it.id
+            }
+            words.forEach {word->
+                if (!sectionWords.contains(word)){
+                    throw BadRequestException("Section does not contain word")
+                }
+            }
+            words.forEach {word->
+                dataDao.removeWordFromSection(word, sectionId)
+            }
+            IntIdResponse.success(sectionId)
+        } catch (bre: BadRequestException) {
+            IntIdResponse.failed(bre.message)
+        } catch (uae: UnauthorizedActivityException) {
+            IntIdResponse.unauthorized(uae.message)
+        }
+    }
+    fun addSentenceToSection(user: User, sentencesSection: SentenceSectionRequest): IntIdResponse{
+        return try {
+            val sectionId = sentencesSection.sectionId
+            val sentences = sentencesSection.sentences
+            validateAdmin(user)
+            if  (!dataDao.exists(sectionId, EntitySection)){
+                throw BadRequestException("Section does not exist")
+            }
+            val section = dataDao.getSectionById(sectionId, SectionModel.SECTIONS_WITH_LESSON_DATA)!!
+            val sectionSentences = section.sentences.map {
+                it.id
+            }
+            val sectionLanguage = dataDao.getUnitById(section.unit, UnitModel.UNIT)!!.language
+            sentences.forEach {sentence->
+                if (sectionSentences.contains(sentence)){
+                    throw BadRequestException("Section already contains sentence")
+                }
+                if (!dataDao.exists(sentence, EntitySentence)){
+                    throw BadRequestException("Sentence does not exist")
+
+                } else if (dataDao.getSentenceById(sentence)!!.language != sectionLanguage){
+                    throw BadRequestException("Sentence language does not match section language")
+                }
+            }
+            sentences.forEach {sentence->
+                dataDao.addSentenceToSection(sentence, sectionId)
+            }
+            IntIdResponse.success(sectionId)
+        } catch (bre: BadRequestException) {
+            IntIdResponse.failed(bre.message)
+        } catch (uae: UnauthorizedActivityException) {
+            IntIdResponse.unauthorized(uae.message)
+        }
+    }
+    fun removeSentenceToSection(user: User, sentencesSection: SentenceSectionRequest): IntIdResponse{
+        return try {
+            val sectionId = sentencesSection.sectionId
+            val sentences = sentencesSection.sentences
+            validateAdmin(user)
+            if  (!dataDao.exists(sectionId, EntitySection)){
+                throw BadRequestException("Section does not exist")
+            }
+            val section = dataDao.getSectionById(sectionId, SectionModel.SECTIONS_WITH_LESSON_DATA)!!
+            val sectionSentences = section.sentences.map {
+                it.id
+            }
+            sentences.forEach {sentence->
+                if (!sectionSentences.contains(sentence)){
+                    throw BadRequestException("Section does not contain sentence")
+                }
+            }
+            sentences.forEach {sentence->
+                dataDao.removeSentenceFromSection(sentence, sectionId)
+            }
+            IntIdResponse.success(sectionId)
+        } catch (bre: BadRequestException) {
+            IntIdResponse.failed(bre.message)
+        } catch (uae: UnauthorizedActivityException) {
+            IntIdResponse.unauthorized(uae.message)
         }
     }
 
