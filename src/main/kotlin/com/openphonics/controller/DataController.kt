@@ -52,6 +52,8 @@ class DataController @Inject constructor(
             val languageName = language.languageName
             val flag = language.flag
             validateLanguageRequestOrThrowException(nativeId, languageId, languageName, flag)
+            if (dataDao.getLanguage(nativeId, languageId, 0) != null)
+                throw BadRequestException("Language already exists")
             validateAdmin(user)
             val responseId = dataDao.addLanguage(nativeId, languageId, languageName, flag)
             IntIdResponse.success(responseId)
@@ -68,6 +70,8 @@ class DataController @Inject constructor(
             val languageName = language.languageName
             val flag = language.flag
             validateLanguageRequestOrThrowException(nativeId, languageId, languageName, flag)
+            if (dataDao.getLanguage(nativeId, languageId, 0) == null)
+                throw BadRequestException("Language doesn't exists")
             validateAdmin(user)
             val responseId = dataDao.updateLanguage(id, nativeId, languageId, languageName, flag)
             IntIdResponse.success(responseId)
@@ -244,6 +248,8 @@ class DataController @Inject constructor(
             val text = word.word
             val languageId = word.languageId
             validateWordRequestOrThrowException(phonic, sound, translatedSound, translateWord, text, languageId)
+            if (dataDao.getLanguageById(languageId, 0)!!.let { lang -> dataDao.getWord(lang.nativeId, lang.languageId, text) != null })
+                throw BadRequestException("Word already exists")
             validateAdmin(user)
             val responseId = dataDao.addWord(phonic, sound ,translatedSound, translateWord, text, languageId)
             IntIdResponse.success(responseId)
@@ -262,6 +268,8 @@ class DataController @Inject constructor(
             val text = word.word
             val languageId = word.languageId
             validateWordRequestOrThrowException(phonic, sound, translatedSound, translateWord, text, languageId)
+            if (dataDao.getLanguageById(languageId, 0)!!.let { lang -> dataDao.getWord(lang.nativeId, lang.languageId, text) == null })
+                throw BadRequestException("Word doesn't exists")
             validateAdmin(user)
             val responseId = dataDao.updateWord(wordId, phonic, sound ,translatedSound, translateWord, text, languageId)
             IntIdResponse.success(responseId)
@@ -347,10 +355,9 @@ class DataController @Inject constructor(
         }
     }
 
-    fun addWordToSection(user: User, wordsSection: WordSectionRequest): IntIdResponse {
+    fun addWordToSection(user: User, sectionId: Int, wordsRequest: WordSectionRequest): IntIdResponse {
         return try {
-            val sectionId = wordsSection.sectionId
-            val words = wordsSection.words
+            val word = wordsRequest.word
             validateAdmin(user)
             if  (!dataDao.exists(sectionId, EntitySection)){
                 throw BadRequestException("Section does not exist")
@@ -360,20 +367,16 @@ class DataController @Inject constructor(
                 it.id
             }
             val sectionLanguage = dataDao.getUnitById(section.unit, UnitModel.UNIT)!!.language
-            words.forEach {word->
-                if (sectionWords.contains(word)){
-                    throw BadRequestException("Section already contains word")
-                }
-                if (!dataDao.exists(word, EntityWord)){
-                    throw BadRequestException("Word does not exist")
+            if (sectionWords.contains(word)){
+                throw BadRequestException("Section already contains word")
+            }
+            if (!dataDao.exists(word, EntityWord)){
+                throw BadRequestException("Word does not exist")
 
-                } else if (dataDao.getWordById(word)!!.language != sectionLanguage){
-                    throw BadRequestException("Word language does not match section language")
-                }
+            } else if (dataDao.getWordById(word)!!.language != sectionLanguage){
+                throw BadRequestException("Word language does not match section language")
             }
-            words.forEach {word->
-                dataDao.addWordToSection(word, sectionId)
-            }
+            dataDao.addWordToSection(word, sectionId)
             IntIdResponse.success(sectionId)
         } catch (bre: BadRequestException) {
             IntIdResponse.failed(bre.message)
@@ -381,10 +384,9 @@ class DataController @Inject constructor(
             IntIdResponse.unauthorized(uae.message)
         }
     }
-    fun removeWordToSection(user: User, wordsSection: WordSectionRequest): IntIdResponse{
+    fun removeWordFromSection(user: User, sectionId: Int, wordsSection: WordSectionRequest): IntIdResponse{
         return try {
-            val sectionId = wordsSection.sectionId
-            val words = wordsSection.words
+            val word = wordsSection.word
             validateAdmin(user)
             if  (!dataDao.exists(sectionId, EntitySection)){
                 throw BadRequestException("Section does not exist")
@@ -393,14 +395,10 @@ class DataController @Inject constructor(
             val sectionWords = section.words.map {
                 it.id
             }
-            words.forEach {word->
-                if (!sectionWords.contains(word)){
-                    throw BadRequestException("Section does not contain word")
-                }
+            if (!sectionWords.contains(word)){
+                throw BadRequestException("Section does not contain word")
             }
-            words.forEach {word->
-                dataDao.removeWordFromSection(word, sectionId)
-            }
+            dataDao.removeWordFromSection(word, sectionId)
             IntIdResponse.success(sectionId)
         } catch (bre: BadRequestException) {
             IntIdResponse.failed(bre.message)
@@ -408,10 +406,9 @@ class DataController @Inject constructor(
             IntIdResponse.unauthorized(uae.message)
         }
     }
-    fun addSentenceToSection(user: User, sentencesSection: SentenceSectionRequest): IntIdResponse{
+    fun addSentenceToSection(user: User, sectionId: Int, sentencesSection: SentenceSectionRequest): IntIdResponse{
         return try {
-            val sectionId = sentencesSection.sectionId
-            val sentences = sentencesSection.sentences
+            val sentence = sentencesSection.sentence
             validateAdmin(user)
             if  (!dataDao.exists(sectionId, EntitySection)){
                 throw BadRequestException("Section does not exist")
@@ -421,20 +418,16 @@ class DataController @Inject constructor(
                 it.id
             }
             val sectionLanguage = dataDao.getUnitById(section.unit, UnitModel.UNIT)!!.language
-            sentences.forEach {sentence->
-                if (sectionSentences.contains(sentence)){
-                    throw BadRequestException("Section already contains sentence")
-                }
-                if (!dataDao.exists(sentence, EntitySentence)){
-                    throw BadRequestException("Sentence does not exist")
+            if (sectionSentences.contains(sentence)){
+                throw BadRequestException("Section already contains sentence")
+            }
+            if (!dataDao.exists(sentence, EntitySentence)){
+                throw BadRequestException("Sentence does not exist")
 
-                } else if (dataDao.getSentenceById(sentence)!!.language != sectionLanguage){
-                    throw BadRequestException("Sentence language does not match section language")
-                }
+            } else if (dataDao.getSentenceById(sentence)!!.language != sectionLanguage){
+                throw BadRequestException("Sentence language does not match section language")
             }
-            sentences.forEach {sentence->
-                dataDao.addSentenceToSection(sentence, sectionId)
-            }
+            dataDao.addSentenceToSection(sentence, sectionId)
             IntIdResponse.success(sectionId)
         } catch (bre: BadRequestException) {
             IntIdResponse.failed(bre.message)
@@ -442,10 +435,9 @@ class DataController @Inject constructor(
             IntIdResponse.unauthorized(uae.message)
         }
     }
-    fun removeSentenceToSection(user: User, sentencesSection: SentenceSectionRequest): IntIdResponse{
+    fun removeSentenceFromSection(user: User, sectionId: Int, sentencesSection: SentenceSectionRequest): IntIdResponse{
         return try {
-            val sectionId = sentencesSection.sectionId
-            val sentences = sentencesSection.sentences
+            val sentence = sentencesSection.sentence
             validateAdmin(user)
             if  (!dataDao.exists(sectionId, EntitySection)){
                 throw BadRequestException("Section does not exist")
@@ -454,14 +446,10 @@ class DataController @Inject constructor(
             val sectionSentences = section.sentences.map {
                 it.id
             }
-            sentences.forEach {sentence->
-                if (!sectionSentences.contains(sentence)){
-                    throw BadRequestException("Section does not contain sentence")
-                }
+            if (!sectionSentences.contains(sentence)){
+                throw BadRequestException("Section does not contain sentence")
             }
-            sentences.forEach {sentence->
-                dataDao.removeSentenceFromSection(sentence, sectionId)
-            }
+            dataDao.removeSentenceFromSection(sentence, sectionId)
             IntIdResponse.success(sectionId)
         } catch (bre: BadRequestException) {
             IntIdResponse.failed(bre.message)
@@ -491,6 +479,8 @@ class DataController @Inject constructor(
             val img = flag.flag
             val id = flag.id
             validateFlagRequestOrThrowException(img, id)
+            if (dataDao.flagExists(id))
+                throw BadRequestException("Flag already exist")
             validateAdmin(user)
             val responseId = dataDao.addFlag(img, id)
             StrIdResponse.success(responseId)
@@ -498,6 +488,39 @@ class DataController @Inject constructor(
             StrIdResponse.failed(bre.message)
         } catch (uae: UnauthorizedActivityException) {
             StrIdResponse.unauthorized(uae.message)
+        }
+    }
+
+    fun updateFlag(user: User, flag: FlagRequest): StrIdResponse {
+        return try {
+            val img = flag.flag
+            val id = flag.id
+            validateFlagRequestOrThrowException(img, id)
+            if (!dataDao.flagExists(id))
+                throw BadRequestException("Flag doesn't exist")
+            validateAdmin(user)
+            val responseId = dataDao.updateFlag(id, img)
+            StrIdResponse.success(responseId)
+        } catch (bre: BadRequestException) {
+            StrIdResponse.failed(bre.message)
+        } catch (uae: UnauthorizedActivityException) {
+            StrIdResponse.unauthorized(uae.message)
+        }
+    }
+    fun deleteFlag(user: User, flagId: String): StrIdResponse {
+        return try {
+            validateAdmin(user)
+            if (dataDao.deleteFlag(flagId)) {
+                StrIdResponse.success(flagId)
+            } else {
+                StrIdResponse.failed("Error Occurred")
+            }
+        } catch (uae: UnauthorizedActivityException) {
+            StrIdResponse.unauthorized(uae.message)
+        } catch (bre: BadRequestException) {
+            StrIdResponse.failed(bre.message)
+        } catch (nfe: NotFoundException) {
+            StrIdResponse.notFound(nfe.message)
         }
     }
 
@@ -514,6 +537,8 @@ class DataController @Inject constructor(
             languageId.length != 2 -> "Language id must be 2 characters"
             flag.length != 2 -> "Flag id must be 2 characters"
             languageName.length > 30 -> "Language name is too long"
+            !nativeId.containsOnlyLetters() -> "Native cannot contain numbers"
+            !languageId.containsOnlyLetters() -> "Language cannot contain numbers"
             !languageName.containsOnlyLetters() -> "Language name cannot contain numbers"
             !dataDao.flagExists(flag) -> "Flag does not exist"
             else -> return
@@ -565,7 +590,7 @@ class DataController @Inject constructor(
         val message = when {
             id.length != 2 -> "Id must be 2 characters"
             !id.containsOnlyLetters() -> "Id cannot contain numbers"
-            dataDao.flagExists(id) -> "Flag already exist"
+
             else -> return
         }
         throw BadRequestException(message)

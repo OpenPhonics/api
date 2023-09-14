@@ -47,6 +47,10 @@ interface DataDao {
 
     fun getFlagById(flagId: String): Flag?
 
+    fun updateFlag(flagId: String, flagImg: String): String
+    fun deleteFlag(flagId: String): Boolean
+
+
     fun addSentence(languageId: Int, words: List<Int>): Int
     fun deleteLanguage(languageId: Int): Boolean
     fun deleteUnit(unitId: Int): Boolean
@@ -233,17 +237,34 @@ class DataDaoImpl @Inject constructor() : DataDao {
     }
 
     override fun getFlagById(flagId: String): Flag? = transaction{
-        EntityFlag.findById(flagId)
-    }?.let {Flag.fromEntity(it)}
+        EntityFlag.findById(flagId)?.let {Flag.fromEntity(it)}
+    }
+
+    override fun updateFlag(flagId: String, flagImg: String): String =  transaction {
+        EntityFlag[flagId].apply {
+            this.flag = flagImg
+        }.id.value
+    }
+
+    override fun deleteFlag(flagId: String): Boolean = transaction {
+        EntityFlag.findById(flagId)?.let {
+            it.run {
+                delete()
+                return@transaction true
+            }
+        }
+        return@transaction false
+    }
 
 
     override fun addSentence(languageId: Int, words: List<Int>): Int = transaction {
         val sentenceId = EntitySentence.new {
             this.language = EntityLanguage[languageId]
         }.id.value
-        words.map{ wordId ->
+        words.mapIndexed { order, wordId ->
             EntitySentenceWordCrossRef.new {
                 this.word = EntityID(wordId, Words)
+                this.order = order
                 this.sentence = EntityID(sentenceId, Sentences)
             }
         }
@@ -253,8 +274,10 @@ class DataDaoImpl @Inject constructor() : DataDao {
     override fun getLanguage(nativeId: String, languageId: String, depth: Int): Language? = transaction {
         EntityLanguage.find {
             (Languages.nativeId eq nativeId) and (Languages.languageId eq languageId)
-        }.firstOrNull()
-    }?.let { Language.fromEntity(it, depth) }
+        }
+            .firstOrNull()
+            ?.let { Language.fromEntity(it, depth) }
+    }
 
     override fun getLanguages(nativeId: String, depth: Int): List<Language> = transaction{
         EntityLanguage.find {
@@ -275,12 +298,12 @@ class DataDaoImpl @Inject constructor() : DataDao {
             EntityUnit.find {
                 (Units.language eq it.id)
             }.firstOrNull()
-        }
-    }?.let { Unit.fromEntity(it, depth) }
+        }?.let { Unit.fromEntity(it, depth) }
+    }
 
     override fun getUnitById(unitId: Int, depth: Int): Unit? = transaction {
-        EntityUnit.findById(unitId)
-    }?.let { Unit.fromEntity(it, depth) }
+        EntityUnit.findById(unitId)?.let { Unit.fromEntity(it, depth) }
+    }
 
     override fun getSection(
         nativeId: String,
@@ -299,12 +322,12 @@ class DataDaoImpl @Inject constructor() : DataDao {
                     (Sections.unit eq it.id)
                 }.firstOrNull()
             }
-        }
-    }?.let { Section.fromEntity(it, depth) }
+        }?.let { Section.fromEntity(it, depth) }
+    }
 
     override fun getSectionById(sectionId: Int, depth: Int): Section? = transaction {
-        EntitySection.findById(sectionId)
-    }?.let { Section.fromEntity(it, depth) }
+        EntitySection.findById(sectionId)?.let { Section.fromEntity(it, depth) }
+    }
 
     override fun getWord(nativeId: String, languageId: String, word: String): Word? = transaction {
         EntityLanguage.find {
@@ -313,12 +336,12 @@ class DataDaoImpl @Inject constructor() : DataDao {
             EntityWord.find {
                 (Words.language eq it.id) and (Words.word eq word)
             }.firstOrNull()
-        }
-    }?.let { Word.fromEntity(it) }
+        }?.let { Word.fromEntity(it) }
+    }
 
     override fun getWordById(wordId: Int): Word? = transaction {
-        EntityWord.findById(wordId)
-    }?.let { Word.fromEntity(it) }
+        EntityWord.findById(wordId)?.let { Word.fromEntity(it) }
+    }
 
     override fun getSentence(nativeId: String, languageId: String, sentence: String): Sentence? = transaction {
         var entitySentence: EntitySentence? = null
@@ -340,8 +363,8 @@ class DataDaoImpl @Inject constructor() : DataDao {
     }
 
     override fun getSentenceById(sentenceId: Int): Sentence? = transaction {
-        EntitySentence.findById(sentenceId)
-    }?.let { Sentence.fromEntity(it) }
+        EntitySentence.findById(sentenceId)?.let { Sentence.fromEntity(it) }
+    }
 
     override fun updateSentence(sentenceId: Int, languageId: Int, words: List<Int>): Int = transaction {
         EntitySentenceWordCrossRef.find {
@@ -489,8 +512,8 @@ class DataDaoImpl @Inject constructor() : DataDao {
     override fun exists(id: Int, type: Any): Boolean = transaction {
         when (type) {
             EntityLanguage -> EntityLanguage
-            EntityUnit -> EntitySection
-            EntitySection -> EntityUnit
+            EntityUnit -> EntityUnit
+            EntitySection -> EntitySection
             EntitySentence -> EntitySentence
             EntityWord -> EntityWord
             EntitySectionSentenceCrossRef -> EntitySectionSentenceCrossRef
