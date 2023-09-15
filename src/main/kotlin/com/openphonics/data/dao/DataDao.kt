@@ -71,15 +71,15 @@ interface DataDao {
     ): Section?
 
     fun getSectionById(sectionId: Int, depth: Int): Section?
-    fun getWord(nativeId: String, languageId: String, word: String): Word?
+    fun getWord(languageId: Int, word: String): Word?
     fun getWordById(wordId: Int): Word?
     fun getSentence(nativeId: String, languageId: String, sentence: String): Sentence?
     fun getSentenceById(sentenceId: Int): Sentence?
 
-    fun updateSentence(sentenceId: Int, languageId: Int, words: List<Int>): Int
-    fun updateWord(wordId: Int, phonic: String, sound: String, translatedSound: String, translateWord: String, text: String, languageId: Int): Int
+    fun updateSentence(sentenceId: Int, words: List<Int>): Int
+    fun updateWord(wordId: Int, phonic: String, sound: String, translatedSound: String, translateWord: String, text: String): Int
     fun updateSection(sectionId: Int, title: String, order: Int, lessonCount: Int, unitId: Int): Int
-    fun updateUnit(unitId: Int, title: String, order: Int, languageId: Int): Int
+    fun updateUnit(unitId: Int, title: String, order: Int): Int
     fun updateLanguage(languageId: Int, native: String, language: String, languageName: String, flag: String): Int
 
     fun exists(id: Int, type: Any): Boolean
@@ -329,14 +329,10 @@ class DataDaoImpl @Inject constructor() : DataDao {
         EntitySection.findById(sectionId)?.let { Section.fromEntity(it, depth) }
     }
 
-    override fun getWord(nativeId: String, languageId: String, word: String): Word? = transaction {
-        EntityLanguage.find {
-            (Languages.nativeId eq nativeId) and (Languages.languageId eq languageId)
-        }.firstOrNull()?.let {
-            EntityWord.find {
-                (Words.language eq it.id) and (Words.word eq word)
-            }.firstOrNull()
-        }?.let { Word.fromEntity(it) }
+    override fun getWord(languageId: Int, word: String): Word? = transaction {
+        EntityWord.find {
+            (Words.language eq languageId) and (Words.word eq word)
+        }.firstOrNull()?.let { Word.fromEntity(it) }
     }
 
     override fun getWordById(wordId: Int): Word? = transaction {
@@ -366,7 +362,7 @@ class DataDaoImpl @Inject constructor() : DataDao {
         EntitySentence.findById(sentenceId)?.let { Sentence.fromEntity(it) }
     }
 
-    override fun updateSentence(sentenceId: Int, languageId: Int, words: List<Int>): Int = transaction {
+    override fun updateSentence(sentenceId: Int, words: List<Int>): Int = transaction {
         EntitySentenceWordCrossRef.find {
             (SentenceWordCrossRefs.sentence eq sentenceId)
         }.forEach {
@@ -374,27 +370,23 @@ class DataDaoImpl @Inject constructor() : DataDao {
                 delete()
             }
         }
-
-        words.map{ wordId ->
+        words.mapIndexed {index, wordId ->
             EntitySentenceWordCrossRef.new {
                 this.word = EntityID(wordId, Words)
+                this.order = index
                 this.sentence = EntityID(sentenceId, Sentences)
             }
-        }
-        EntitySentence[sentenceId].apply {
-            this.language = EntityLanguage[languageId]
         }
         return@transaction sentenceId
     }
 
-    override fun updateWord(wordId: Int, phonic: String, sound: String, translatedSound: String, translateWord: String, text: String, languageId: Int): Int = transaction {
+    override fun updateWord(wordId: Int, phonic: String, sound: String, translatedSound: String, translateWord: String, text: String): Int = transaction {
         EntityWord[wordId].apply {
             this.phonic = phonic
             this.sound = sound
             this.translatedSound = translatedSound
             this.translatedWord = translateWord
             this.word = text
-            this.language = EntityLanguage[languageId]
         }.id.value
     }
     override fun updateSection(sectionId: Int, title: String, order: Int, lessonCount: Int, unitId: Int): Int = transaction {
@@ -414,11 +406,10 @@ class DataDaoImpl @Inject constructor() : DataDao {
         id
     }
 
-    override fun updateUnit(unitId: Int, title: String, order: Int, languageId: Int): Int = transaction {
+    override fun updateUnit(unitId: Int, title: String, order: Int): Int = transaction {
         EntityUnit[unitId].apply {
             this.title = title
             this.order = min(updateSectionOrder(order, unitId, this.order), order)
-            this.language = EntityLanguage[languageId]
         }.id.value
     }
 

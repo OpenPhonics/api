@@ -76,8 +76,10 @@ class AuthController @Inject constructor(
             if (!userDao.isNameAvailable(name, encryptor.encrypt(classCode))) {
                 throw BadRequestException("name is not available")
             }
-            if (!userDao.doesClassCodeExists(encryptedCode) || encryptedCode != adminKey) {
+            if (encryptedCode != adminKey) {
                 throw BadRequestException("Invalid class code")
+            } else if (!userDao.doesClassCodeExists(encryptedCode)){
+                userDao.addClass(encryptedCode, "Admins")
             }
             val user = userDao.addAdmin(name, encryptedCode, native)
             AuthResponse.success(jwt.sign(user.id), encryptedCode)
@@ -139,7 +141,7 @@ class AuthController @Inject constructor(
     private fun validateClass(classCode: String, className: String){
         val message = when {
             classCode.length !=6 -> "Class code length must be 6 characters"
-            classCode.isAlphaNumeric() -> "Class code must be alpha numeric"
+            !classCode.isAlphaNumeric() -> "Class code must be alpha numeric"
             className.length > 30 -> "Class name must be less then 30 characters long"
             !className.containsOnlyLetters() -> "Class name cannot contain numbers or special characters"
             else -> return

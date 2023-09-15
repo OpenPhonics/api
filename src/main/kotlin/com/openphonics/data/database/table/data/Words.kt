@@ -1,9 +1,10 @@
 package com.openphonics.data.database.table.data
 
 import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.ReferenceOption
 
 object Words : IntIdTable() {
-    var language = reference("language", Languages)
+    var language = reference("language", Languages, onDelete = ReferenceOption.CASCADE)
     val phonic = varchar("phonic", length = 100)
     val sound = varchar("sound", length = 300)
     val translatedWord = varchar("translated_word", length = 100)

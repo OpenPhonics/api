@@ -127,7 +127,7 @@ private fun Route.updateUnitById(controller: Lazy<DataController>){
     put<Data.Unit.Id>{unit ->
         val principal = call.principal<UserPrincipal>()
             ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
-        val unitRequest  = runCatching { call.receive<UnitRequest>() }.getOrElse {
+        val unitRequest  = runCatching { call.receive<UpdateUnitRequest>() }.getOrElse {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_DATA)
         }
         val unitResponse = controller.get().updateUnit(principal.user, unit.id, unitRequest)
@@ -196,49 +196,49 @@ private fun Route.deleteSectionById(controller: Lazy<DataController>){
     }
 }
 private fun Route.postWordsToSection(controller: Lazy<DataController>){
-    post<Data.Section.Id.Word>{
+    post<Data.Section.Id.Word>{word->
         val principal = call.principal<UserPrincipal>()
             ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
         val wordsSection = runCatching { call.receive<WordSectionRequest>() }.getOrElse {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_DATA)
         }
-        val wordSectionResponse = controller.get().addWordToSection(principal.user, wordsSection)
+        val wordSectionResponse = controller.get().addWordToSection(principal.user, word.parent.id, wordsSection)
         val response = generateHttpResponse(wordSectionResponse)
         call.respond(response.code, wordSectionResponse)
     }
 }
 private fun Route.postSentencesToSection(controller: Lazy<DataController>){
-    post<Data.Section.Id.Sentence>{
+    post<Data.Section.Id.Sentence>{sentence->
         val principal = call.principal<UserPrincipal>()
             ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
         val sentencesSection = runCatching { call.receive<SentenceSectionRequest>() }.getOrElse {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_DATA)
         }
-        val wordSectionResponse = controller.get().addSentenceToSection(principal.user, sentencesSection)
+        val wordSectionResponse = controller.get().addSentenceToSection(principal.user, sentence.parent.id, sentencesSection)
         val response = generateHttpResponse(wordSectionResponse)
         call.respond(response.code, wordSectionResponse)
     }
 }
 private fun Route.deleteWordsFromSection(controller: Lazy<DataController>){
-    delete<Data.Section.Id.Word>{
+    delete<Data.Section.Id.Word>{word->
         val principal = call.principal<UserPrincipal>()
             ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
         val wordsSection = runCatching { call.receive<WordSectionRequest>() }.getOrElse {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_DATA)
         }
-        val wordSectionResponse = controller.get().removeWordToSection(principal.user, wordsSection)
+        val wordSectionResponse = controller.get().removeWordFromSection(principal.user, word.parent.id, wordsSection)
         val response = generateHttpResponse(wordSectionResponse)
         call.respond(response.code, wordSectionResponse)
     }
 }
 private fun Route.deleteSentencesFromSection(controller: Lazy<DataController>){
-    delete<Data.Section.Id.Sentence>{
+    delete<Data.Section.Id.Sentence>{sentence ->
         val principal = call.principal<UserPrincipal>()
             ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
         val sentencesSection = runCatching { call.receive<SentenceSectionRequest>() }.getOrElse {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_DATA)
         }
-        val wordSectionResponse = controller.get().removeSentenceToSection(principal.user, sentencesSection)
+        val wordSectionResponse = controller.get().removeSentenceFromSection(principal.user, sentence.parent.id, sentencesSection)
         val response = generateHttpResponse(wordSectionResponse)
         call.respond(response.code, wordSectionResponse)
     }
@@ -279,7 +279,7 @@ private fun Route.updateWordById(controller: Lazy<DataController>){
     put<Data.Word.Id>{word ->
         val principal = call.principal<UserPrincipal>()
             ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
-        val wordRequest  = runCatching { call.receive<WordRequest>() }.getOrElse {
+        val wordRequest  = runCatching { call.receive<UpdateWordRequest>() }.getOrElse {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_DATA)
         }
         val wordResponse = controller.get().updateWord(principal.user, word.id, wordRequest)
@@ -327,7 +327,7 @@ private fun Route.updateSentenceById(controller: Lazy<DataController>){
     put<Data.Sentence.Id>{sentence ->
         val principal = call.principal<UserPrincipal>()
             ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
-        val sentenceRequest  = runCatching { call.receive<SentenceRequest>() }.getOrElse {
+        val sentenceRequest  = runCatching { call.receive<UpdateSentenceRequest>() }.getOrElse {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_DATA)
         }
         val sentenceResponse = controller.get().updateSentence(principal.user, sentence.id, sentenceRequest)
@@ -377,8 +377,32 @@ private fun Route.getFlagById(controller: Lazy<DataController>){
         call.respond(response.code, flagResponse)
     }
 }
+
+private fun Route.updateFlagById(controller: Lazy<DataController>){
+    put<Data.Flag>{flag ->
+        val principal = call.principal<UserPrincipal>()
+            ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
+        val flagRequest  = runCatching { call.receive<FlagRequest>() }.getOrElse {
+            throw BadRequestException(FailureMessages.MESSAGE_MISSING_DATA)
+        }
+        val flagResponse = controller.get().updateFlag(principal.user, flagRequest)
+        val response = generateHttpResponse(flagResponse)
+        call.respond(response.code,flagResponse)
+    }
+}
+private fun Route.deleteFlagById(controller: Lazy<DataController>){
+    delete<Data.Flag.Id> {flag ->
+        val principal = call.principal<UserPrincipal>()
+            ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
+        val flagResponse = controller.get().deleteFlag(principal.user, flag.id)
+        val response = generateHttpResponse(flagResponse)
+        call.respond(response.code, flagResponse)
+    }
+}
 private fun Route.flagOperations(controller: Lazy<DataController>){
     postFlag(controller)
     getFlagById(controller)
     getAllFlags(controller)
+    deleteFlagById(controller)
+    updateFlagById(controller)
 }

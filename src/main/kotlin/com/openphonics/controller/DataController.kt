@@ -52,8 +52,6 @@ class DataController @Inject constructor(
             val languageName = language.languageName
             val flag = language.flag
             validateLanguageRequestOrThrowException(nativeId, languageId, languageName, flag)
-            if (dataDao.getLanguage(nativeId, languageId, 0) != null)
-                throw BadRequestException("Language already exists")
             validateAdmin(user)
             val responseId = dataDao.addLanguage(nativeId, languageId, languageName, flag)
             IntIdResponse.success(responseId)
@@ -69,9 +67,9 @@ class DataController @Inject constructor(
             val languageId  = language.languageId
             val languageName = language.languageName
             val flag = language.flag
-            validateLanguageRequestOrThrowException(nativeId, languageId, languageName, flag)
-            if (dataDao.getLanguage(nativeId, languageId, 0) == null)
+            if (!dataDao.exists(id, EntityLanguage))
                 throw BadRequestException("Language doesn't exists")
+            validateLanguageRequestOrThrowException(nativeId, languageId, languageName, flag)
             validateAdmin(user)
             val responseId = dataDao.updateLanguage(id, nativeId, languageId, languageName, flag)
             IntIdResponse.success(responseId)
@@ -129,14 +127,15 @@ class DataController @Inject constructor(
             IntIdResponse.unauthorized(uae.message)
         }
     }
-    fun updateUnit(user: User, unitId: Int, unit: UnitRequest): IntIdResponse {
+    fun updateUnit(user: User, unitId: Int, unit: UpdateUnitRequest): IntIdResponse {
         return try {
             val title = unit.title
             val order  = unit.order
-            val language = unit.languageId
-            validateUnitRequestOrThrowException(title, order, language)
+            if (!dataDao.exists(unitId, EntityUnit))
+                throw BadRequestException("Unit doesn't exists")
+            validateUpdateUnitRequestOrThrowException(title, order)
             validateAdmin(user)
-            val responseId = dataDao.updateUnit(unitId, title, order, language)
+            val responseId = dataDao.updateUnit(unitId, title, order)
             IntIdResponse.success(responseId)
         } catch (bre: BadRequestException) {
             IntIdResponse.failed(bre.message)
@@ -198,7 +197,9 @@ class DataController @Inject constructor(
             val order = section.order
             val lessonCount = section.lessonCount
             val unit = section.unitId
-            validateSectionRequestOrThrowException(title, order, lessonCount, unit)
+            if (!dataDao.exists(sectionId, EntitySection))
+                throw BadRequestException("Section doesn't exists")
+            validateUpdateSectionRequestOrThrowException(title, order, lessonCount, unit, sectionId)
             validateAdmin(user)
             val responseId = dataDao.updateSection(sectionId, title, order, lessonCount, unit)
             IntIdResponse.success(responseId)
@@ -248,8 +249,6 @@ class DataController @Inject constructor(
             val text = word.word
             val languageId = word.languageId
             validateWordRequestOrThrowException(phonic, sound, translatedSound, translateWord, text, languageId)
-            if (dataDao.getLanguageById(languageId, 0)!!.let { lang -> dataDao.getWord(lang.nativeId, lang.languageId, text) != null })
-                throw BadRequestException("Word already exists")
             validateAdmin(user)
             val responseId = dataDao.addWord(phonic, sound ,translatedSound, translateWord, text, languageId)
             IntIdResponse.success(responseId)
@@ -259,19 +258,18 @@ class DataController @Inject constructor(
             IntIdResponse.unauthorized(uae.message)
         }
     }
-    fun updateWord(user: User, wordId: Int, word: WordRequest): IntIdResponse {
+    fun updateWord(user: User, wordId: Int, word: UpdateWordRequest): IntIdResponse {
         return try {
             val phonic = word.phonic
             val sound = word.sound
             val translatedSound = word.translatedSound
             val translateWord = word.translatedWord
             val text = word.word
-            val languageId = word.languageId
-            validateWordRequestOrThrowException(phonic, sound, translatedSound, translateWord, text, languageId)
-            if (dataDao.getLanguageById(languageId, 0)!!.let { lang -> dataDao.getWord(lang.nativeId, lang.languageId, text) == null })
-                throw BadRequestException("Word doesn't exists")
+            if (!dataDao.exists(wordId, EntityWord))
+                throw BadRequestException("Word doesn't exist")
+            validateUpdateWordRequestOrThrowException(wordId, phonic, sound, translatedSound, translateWord, text)
             validateAdmin(user)
-            val responseId = dataDao.updateWord(wordId, phonic, sound ,translatedSound, translateWord, text, languageId)
+            val responseId = dataDao.updateWord(wordId, phonic, sound ,translatedSound, translateWord, text)
             IntIdResponse.success(responseId)
         } catch (bre: BadRequestException) {
             IntIdResponse.failed(bre.message)
@@ -324,13 +322,12 @@ class DataController @Inject constructor(
             IntIdResponse.unauthorized(uae.message)
         }
     }
-    fun updateSentence(user: User, sentenceId: Int, sentence: SentenceRequest): IntIdResponse {
+    fun updateSentence(user: User, sentenceId: Int, sentence: UpdateSentenceRequest): IntIdResponse {
         return try {
-            val language = sentence.languageId
             val words = sentence.words
-            validateSentenceRequestOrThrowException(language, words)
+            validateUpdateSentenceRequestOrThrowException(sentenceId, words)
             validateAdmin(user)
-            val responseId = dataDao.updateSentence(sentenceId, language, words)
+            val responseId = dataDao.updateSentence(sentenceId, words)
             IntIdResponse.success(responseId)
         } catch (bre: BadRequestException) {
             IntIdResponse.failed(bre.message)
@@ -341,7 +338,7 @@ class DataController @Inject constructor(
     fun deleteSentence(user: User, sentenceId: Int): IntIdResponse {
         return try {
             validateAdmin(user)
-            if (dataDao.deleteWord(sentenceId)) {
+            if (dataDao.deleteSentence(sentenceId)) {
                 IntIdResponse.success(sentenceId)
             } else {
                 IntIdResponse.failed("Error Occurred")
@@ -541,6 +538,7 @@ class DataController @Inject constructor(
             !languageId.containsOnlyLetters() -> "Language cannot contain numbers"
             !languageName.containsOnlyLetters() -> "Language name cannot contain numbers"
             !dataDao.flagExists(flag) -> "Flag does not exist"
+            dataDao.getLanguage(nativeId, languageId, 0) != null -> "Language already exists"
             else -> return
         }
         throw BadRequestException(message)
@@ -551,6 +549,15 @@ class DataController @Inject constructor(
             title.length > 30 -> "'title' cannot contain more then 30 characters"
             order < 0 -> "'order' cannot be negative"
             !dataDao.exists(languageId, EntityLanguage) -> "Language does not exist"
+            else -> return
+        }
+        throw BadRequestException(message)
+    }
+    private fun validateUpdateUnitRequestOrThrowException(title: String, order: Int){
+        val message = when {
+            !title.containsOnlyLetters()-> "'title' cannot contain numbers"
+            title.length > 30 -> "'title' cannot contain more then 30 characters"
+            order < 0 -> "'order' cannot be negative"
             else -> return
         }
         throw BadRequestException(message)
@@ -566,6 +573,18 @@ class DataController @Inject constructor(
         }
         throw BadRequestException(message)
     }
+    private fun validateUpdateSectionRequestOrThrowException(title: String, order: Int, lessonCount: Int, unitId: Int, sectionId: Int){
+        val message = when {
+            !title.containsOnlyLetters()-> "'title' cannot contain numbers"
+            title.length > 30 -> "'title' cannot contain more then 30 characters"
+            order < 0 -> "'order' cannot be negative"
+            lessonCount < 1 -> "each section must contain at least one lesson"
+            !dataDao.exists(unitId, EntityUnit) -> "Unit does not exist"
+            dataDao.getUnitById(unitId, 0)!!.language != dataDao.getUnitById(dataDao.getSectionById(sectionId, 0)!!.unit, 0)!!.language -> "Section and Unit Language does not match"
+            else -> return
+        }
+        throw BadRequestException(message)
+    }
     private fun validateWordRequestOrThrowException(phonic: String, sound: String, translatedSound: String, translateWord: String, text: String, languageId: Int){
         val message = when {
             !phonic.containsOnlyLetters() -> "phonic cannot contain numbers"
@@ -574,6 +593,20 @@ class DataController @Inject constructor(
             phonic.length > 100 || text.length > 100 || translateWord.length >100 -> "text is too long"
             sound.length > 300 || translatedSound.length > 300 -> "link text is too long"
             !dataDao.exists(languageId, EntityLanguage) -> "Language does not exist"
+            dataDao.getWord(languageId, text) != null -> "Word already exists"
+            else -> return
+        }
+        throw BadRequestException(message)
+    }
+
+    private fun validateUpdateWordRequestOrThrowException(wordId: Int, phonic: String, sound: String, translatedSound: String, translateWord: String, text: String){
+        val message = when {
+            !phonic.containsOnlyLetters() -> "phonic cannot contain numbers"
+            !text.containsOnlyLetters()  -> "word cannot contain numbers"
+            !translateWord.containsOnlyLetters() -> "translated word cannot contain numbers"
+            phonic.length > 100 || text.length > 100 || translateWord.length >100 -> "text is too long"
+            sound.length > 300 || translatedSound.length > 300 -> "link text is too long"
+            dataDao.getWord(dataDao.getWordById(wordId)!!.language, text) != null -> "Word already exists"
             else -> return
         }
         throw BadRequestException(message)
@@ -582,6 +615,14 @@ class DataController @Inject constructor(
         val message = when {
             words.any {!dataDao.exists(it, EntityWord)} -> "Word does not exist"
             !dataDao.exists(languageId, EntityLanguage) -> "Language does not exist"
+            else -> return
+        }
+        throw BadRequestException(message)
+    }
+    private fun validateUpdateSentenceRequestOrThrowException(sentenceId: Int, words: List<Int>){
+        val message = when {
+            words.any {!dataDao.exists(it, EntityWord)} -> "Word does not exist"
+            words.any {dataDao.getWordById(it)!!.language != dataDao.getSentenceById(sentenceId)!!.language} -> "Word language does not match sentence language"
             else -> return
         }
         throw BadRequestException(message)

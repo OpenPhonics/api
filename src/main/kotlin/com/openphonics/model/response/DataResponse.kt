@@ -92,6 +92,7 @@ data class Section (
 
 @Serializable
 data class Word(
+    val language: Int,
     val phonic: String,
     val sound: String,
     val translatedSound: String,
@@ -101,6 +102,7 @@ data class Word(
 ) {
     companion object {
         fun create(word: com.openphonics.data.model.data.Word): Word = Word(
+            word.language,
             word.phonic,
             word.sound,
             word.translatedSound,
@@ -113,11 +115,13 @@ data class Word(
 
 @Serializable
 data class Sentence(
+    val language: Int,
     val sentence: List<Word>,
     val id: Int
 ) {
     companion object {
         fun create(sentence: com.openphonics.data.model.data.Sentence) = Sentence(
+            sentence.language,
             sentence.sentence.map {
                 Word.create(it)
             },

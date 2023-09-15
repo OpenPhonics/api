@@ -35,6 +35,10 @@ dependencies {
     implementation "io.ktor:ktor-server-netty-jvm"
     implementation "ch.qos.logback:logback-classic:$logback_version"
 
+    //HOCON
+    implementation "com.typesafe:config:1.4.2"
+
+
 
     //Exposed
     implementation "org.jetbrains.exposed:exposed-core:$exposed_version"

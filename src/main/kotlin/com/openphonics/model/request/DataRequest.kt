@@ -49,12 +49,30 @@ data class FlagRequest(
 
 @Serializable
 data class WordSectionRequest(
-    val sectionId: Int,
-    val words: List<Int>
+    val word: Int
 )
 
 @Serializable
 data class SentenceSectionRequest(
-    val sectionId: Int,
-    val sentences: List<Int>
+    val sentence: Int
+)
+
+@Serializable
+data class UpdateUnitRequest(
+    val title: String,
+    val order: Int
+)
+
+@Serializable
+data class UpdateWordRequest(
+    val phonic: String,
+    val sound: String,
+    val translatedSound: String,
+    val translatedWord: String,
+    val word: String,
+)
+
+@Serializable
+data class UpdateSentenceRequest(
+    val words: List<Int>
 )

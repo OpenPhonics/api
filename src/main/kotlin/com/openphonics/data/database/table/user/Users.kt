@@ -18,6 +18,7 @@ package com.openphonics.data.database.table.user
 
 import com.openphonics.data.database.table.progress.LanguagesProgress
 import org.jetbrains.exposed.dao.id.UUIDTable
+import org.jetbrains.exposed.sql.ReferenceOption
 
 object Users : UUIDTable() {
     val name = varchar("name", length = 30)
