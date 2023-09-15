@@ -337,6 +337,7 @@ class DataController @Inject constructor(
     }
     fun deleteSentence(user: User, sentenceId: Int): IntIdResponse {
         return try {
+            checkDataExistsOrThrowException(sentenceId, EntitySentence)
             validateAdmin(user)
             if (dataDao.deleteSentence(sentenceId)) {
                 IntIdResponse.success(sentenceId)
@@ -488,10 +489,10 @@ class DataController @Inject constructor(
         }
     }
 
-    fun updateFlag(user: User, flag: FlagRequest): StrIdResponse {
+    fun updateFlag(user: User, flagId: String, flag: UpdateFlagRequest): StrIdResponse {
         return try {
             val img = flag.flag
-            val id = flag.id
+            val id = flagId
             validateFlagRequestOrThrowException(img, id)
             if (!dataDao.flagExists(id))
                 throw BadRequestException("Flag doesn't exist")
@@ -613,6 +614,7 @@ class DataController @Inject constructor(
     }
     private fun validateSentenceRequestOrThrowException(languageId: Int, words: List<Int>){
         val message = when {
+            words.isEmpty() -> "Sentence cannot be empty"
             words.any {!dataDao.exists(it, EntityWord)} -> "Word does not exist"
             !dataDao.exists(languageId, EntityLanguage) -> "Language does not exist"
             else -> return

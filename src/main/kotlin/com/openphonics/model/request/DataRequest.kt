@@ -76,3 +76,8 @@ data class UpdateWordRequest(
 data class UpdateSentenceRequest(
     val words: List<Int>
 )
+
+@Serializable
+data class UpdateFlagRequest(
+    val flag: String
+)

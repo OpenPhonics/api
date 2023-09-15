@@ -20,10 +20,7 @@ import com.openphonics.auth.principal.UserPrincipal
 import com.openphonics.controller.AuthController
 import com.openphonics.exception.FailureMessages
 import com.openphonics.exception.UnauthorizedActivityException
-import com.openphonics.model.request.AdminSignUpRequest
-import com.openphonics.model.request.ClassroomRequest
-import com.openphonics.model.request.LoginRequest
-import com.openphonics.model.request.UserSignUpRequest
+import com.openphonics.model.request.*
 import com.openphonics.model.response.generateHttpResponse
 import com.openphonics.plugin.controllers
 import dagger.Lazy
@@ -33,6 +30,8 @@ import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.resources.post
+import io.ktor.server.resources.put
+import io.ktor.server.resources.get
 import io.ktor.server.resources.delete
 import io.ktor.server.routing.*
 import io.ktor.util.*
@@ -46,20 +45,68 @@ fun Route.AuthApi(authController: Lazy<AuthController> = controllers.authControl
     registerUser(authController)
     registerAdmin(authController)
     authenticate {
+        getClassroom(authController)
         createClass(authController)
+        updateClass(authController)
+        deleteClassroom(authController)
+        deleteUserFromAdmin(authController)
+
         deleteUser(authController)
     }
 
 }
 @OptIn(KtorExperimentalAPI::class)
 private fun Route.createClass(controller: Lazy<AuthController>){
-    post<Auth.Class> {
+    post<Auth.Admin.Classroom> {
         val principal = call.principal<UserPrincipal>()
             ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
         val classroomRequest = runCatching { call.receive<ClassroomRequest>() }.getOrElse {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_CREDENTIALS)
         }
-        val classroomResponse = controller.get().addClass(principal.user, classroomRequest.classCode, classroomRequest.className)
+        val classroomResponse = controller.get().addClassroom(principal.user, classroomRequest)
+        val response = generateHttpResponse(classroomResponse)
+        call.respond(response.code, classroomResponse)
+    }
+}
+@OptIn(KtorExperimentalAPI::class)
+private fun Route.deleteClassroom(controller: Lazy<AuthController>){
+    delete<Auth.Admin.Classroom.ClassCode> {classCode->
+        val principal = call.principal<UserPrincipal>()
+            ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
+        val authResponse = controller.get().deleteClassroom(principal.user, classCode.classCode)
+        val response = generateHttpResponse(authResponse)
+        call.respond(response.code, authResponse)
+    }
+}
+@OptIn(KtorExperimentalAPI::class)
+private fun Route.getClassroom(controller: Lazy<AuthController>){
+    get<Auth.Admin.Classroom.ClassCode> {classCode->
+        val principal = call.principal<UserPrincipal>()
+            ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
+        val authResponse = controller.get().getClassroom(principal.user, classCode.classCode)
+        val response = generateHttpResponse(authResponse)
+        call.respond(response.code, authResponse)
+    }
+}
+@OptIn(KtorExperimentalAPI::class)
+private fun Route.deleteUserFromAdmin(controller: Lazy<AuthController>){
+    delete<Auth.Admin.User.Id> {user->
+        val principal = call.principal<UserPrincipal>()
+            ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
+        val authResponse = controller.get().deleteUserFromAdmin(principal.user, user.id)
+        val response = generateHttpResponse(authResponse)
+        call.respond(response.code, authResponse)
+    }
+}
+@OptIn(KtorExperimentalAPI::class)
+private fun Route.updateClass(controller: Lazy<AuthController>){
+    put<Auth.Admin.Classroom.ClassCode> {classCode ->
+        val principal = call.principal<UserPrincipal>()
+            ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
+        val classroomRequest = runCatching { call.receive<UpdateClassroomRequest>() }.getOrElse {
+            throw BadRequestException(FailureMessages.MESSAGE_MISSING_CREDENTIALS)
+        }
+        val classroomResponse = controller.get().updateClassroom(principal.user, classCode.classCode, classroomRequest)
         val response = generateHttpResponse(classroomResponse)
         call.respond(response.code, classroomResponse)
     }
@@ -71,7 +118,7 @@ private fun Route.registerUser(controller: Lazy<AuthController>){
         val authRequest = runCatching { call.receive<UserSignUpRequest>() }.getOrElse {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_CREDENTIALS)
         }
-        val authResponse = controller.get().registerUser(authRequest.name, authRequest.classCode, authRequest.native,authRequest.language)
+        val authResponse = controller.get().registerUser(authRequest)
         val response = generateHttpResponse(authResponse)
         call.respond(response.code, authResponse)
     }
@@ -92,7 +139,7 @@ private fun Route.registerAdmin(controller: Lazy<AuthController>){
         val authRequest = runCatching { call.receive<AdminSignUpRequest>() }.getOrElse {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_CREDENTIALS)
         }
-        val authResponse = controller.get().registerAdmin(authRequest.name, authRequest.classCode, AdminSignUpRequest.ADMIN_NATIVE)
+        val authResponse = controller.get().registerAdmin(authRequest)
         val response = generateHttpResponse(authResponse)
         call.respond(response.code, authResponse)
     }
@@ -103,7 +150,7 @@ private fun Route.login(controller: Lazy<AuthController>){
         val authRequest = runCatching { call.receive<LoginRequest>() }.getOrElse {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_CREDENTIALS)
         }
-        val authResponse = controller.get().login(authRequest.name, authRequest.classCode)
+        val authResponse = controller.get().login(authRequest)
         val response = generateHttpResponse(authResponse)
         call.respond(response.code, authResponse)
     }

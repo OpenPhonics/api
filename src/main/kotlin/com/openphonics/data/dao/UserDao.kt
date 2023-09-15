@@ -23,7 +23,9 @@ import com.openphonics.data.entity.data.EntityLanguage
 import com.openphonics.data.entity.progress.EntityLanguageProgress
 import com.openphonics.data.entity.user.EntityClassroom
 import com.openphonics.data.entity.user.EntityUser
+import com.openphonics.data.model.user.Classroom
 import com.openphonics.data.model.user.User
+import org.jetbrains.exposed.dao.EntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -34,7 +36,10 @@ import javax.swing.text.html.parser.Entity
 
 interface UserDao {
 
+    fun getClass(classCode: String): Classroom
     fun addClass(classCode: String, className: String): String
+    fun updateClass(classCode: String, className: String): String
+    fun deleteClass(classCode: String): Boolean
     fun addAdmin(name: String, classCode: String, native: String): User
     fun addUser(name: String, classCode: String, native: String, language: Int): User
     fun findByUUID(uuid: UUID): User?
@@ -50,10 +55,28 @@ interface UserDao {
 
 @Singleton
 class UserDaoImpl @Inject constructor() : UserDao {
+    override fun getClass(classCode: String): Classroom  = transaction {
+        EntityClassroom[classCode].let {Classroom.fromEntity(it)}
+    }
+
     override fun addClass(classCode: String, className: String): String = transaction{
        EntityClassroom.new (classCode) {
            this.className = className
        }.id.value
+    }
+
+    override fun updateClass(classCode: String, className: String): String  = transaction{
+        EntityClassroom[classCode].apply {
+            this.className = className
+        }.id.value
+    }
+
+    override fun deleteClass(classCode: String): Boolean = transaction{
+        EntityClassroom.findById(classCode)?.run {
+            delete()
+            return@transaction true
+        }
+        return@transaction false
     }
 
     override fun addAdmin(name: String, classCode: String, native: String): User= transaction {

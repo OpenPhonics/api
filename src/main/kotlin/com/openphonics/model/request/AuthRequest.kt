@@ -48,3 +48,8 @@ data class ClassroomRequest(
     val className: String,
     val classCode: String,
 )
+
+@Serializable
+data class UpdateClassroomRequest(
+    val className: String
+)

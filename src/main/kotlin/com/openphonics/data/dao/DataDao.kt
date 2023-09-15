@@ -485,7 +485,15 @@ class DataDaoImpl @Inject constructor() : DataDao {
 
     override fun deleteWord(wordId: Int): Boolean = transaction {
         val eWord = EntityWord.findById(wordId)
+
         eWord?.run {
+            EntitySentenceWordCrossRef.find {
+                SentenceWordCrossRefs.word eq eWord.id
+            }.forEach {
+                EntitySentence[it.sentence].run {
+                    delete()
+                }
+            }
             delete()
             return@transaction true
         }

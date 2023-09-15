@@ -1,7 +1,5 @@
 package com.openphonics.tests
 
-import com.openphonics.ApplicationTest
-import com.openphonics.ApplicationTest.Companion.test
 import com.openphonics.ApplicationTest.Companion.extractResponse
 import com.openphonics.Testing.BLANK_CLASS_CODE
 import com.openphonics.Testing.INVALID_BLANK_NAME
@@ -18,41 +16,24 @@ import com.openphonics.Testing.VALID_NAME
 import com.openphonics.model.request.AdminSignUpRequest
 import com.openphonics.model.request.ClassroomRequest
 import com.openphonics.model.request.LoginRequest
+import com.openphonics.model.request.UpdateClassroomRequest
 import com.openphonics.model.response.AuthResponse
 import com.openphonics.model.response.StrIdResponse
 import com.openphonics.route.auth.Routing
-import com.openphonics.tests.Auth.invalidRegisterAdminBlankName
-import com.openphonics.tests.Auth.invalidRegisterAdminInvalidClassCode
-import com.openphonics.tests.Auth.invalidRegisterAdminLongName
-import com.openphonics.tests.Auth.invalidRegisterAdminNoSpaceName
-import com.openphonics.tests.Auth.invalidRegisterAdminNumericName
-import com.openphonics.tests.Auth.invalidRegisterAdminShortName
-import com.openphonics.tests.Auth.invalidRegisterAdminWrongClassCode
-import com.openphonics.tests.Auth.registerAdmin
 import com.openphonics.tests.Auth.testLoginAdmin
-import com.openphonics.tests.Auth.testRegisterAdmin
 import com.openphonics.tests.Auth.validLoginAdmin
 import com.openphonics.tests.Auth.validRegisterAdmin
-import com.openphonics.tests.Classroom.invalidClassroomBlankClassCode
-import com.openphonics.tests.Classroom.invalidClassroomLongName
-import com.openphonics.tests.Classroom.invalidClassroomNumericName
-import com.openphonics.tests.Classroom.testCreateClass
-import com.openphonics.tests.Classroom.validClassroom
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.utility.DockerImageName
-import kotlin.test.Test
 import kotlin.test.assertEquals
 
 object Classroom {
-    const val CREATE_CLASS_URL = "${Routing.AUTH}/${Routing.CLASS}"
-    val validClassroom = ClassroomRequest(
+    const val CREATE_CLASS_URL = "${Routing.AUTH}/${Routing.ADMIN}/${Routing.CLASS}"
+    val CLASS_URL_ID: (String) -> String =  { classCode -> "${Routing.AUTH}/${Routing.ADMIN}/${Routing.CLASS}/$classCode" }
+    val validClassroomRequest = ClassroomRequest(
         VALID_CLASS_NAME,
         VALID_CLASS_CODE
     )
@@ -69,10 +50,30 @@ object Classroom {
         VALID_CLASS_CODE
     )
 
+
     val createClass: suspend (String, ClassroomRequest?, HttpClient) -> HttpResponse = { token, data, client ->
         client.post(CREATE_CLASS_URL) {
             contentType(ContentType.Application.Json)
             setBody(data)
+            bearerAuth(token)
+        }
+    }
+    val updateClass: suspend (String, String, UpdateClassroomRequest?, HttpClient) -> HttpResponse = {token,classCode, request, client ->
+        client.put(CLASS_URL_ID(classCode)) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+            bearerAuth(token)
+        }
+    }
+    val deleteClass: suspend (String, String, HttpClient) -> HttpResponse = {token,classCode, client ->
+        client.delete(CLASS_URL_ID(classCode)) {
+            contentType(ContentType.Application.Json)
+            bearerAuth(token)
+        }
+    }
+    val getClassroom: suspend (String, String, HttpClient)-> HttpResponse = { token, classCode, client ->
+        client.get(CLASS_URL_ID(classCode)) {
+            contentType(ContentType.Application.Json)
             bearerAuth(token)
         }
     }
@@ -131,6 +132,7 @@ object Auth {
         VALID_NAME,
         VALID_ADMIN_CLASS_CODE
     )
+
     val registerAdmin: suspend (AdminSignUpRequest?, HttpClient) -> HttpResponse = { data, client ->
         client.post(REGISTER_URL) {
             contentType(ContentType.Application.Json)

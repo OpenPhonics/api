@@ -89,8 +89,8 @@ object Flags {
             bearerAuth(token)
         }
     }
-    val updateFlagById: suspend (String, FlagRequest?, HttpClient) -> HttpResponse = {token, request, client ->
-        client.put(FLAGS_URL) {
+    val updateFlagById: suspend (String, String, UpdateFlagRequest?, HttpClient) -> HttpResponse = {token,id, request, client ->
+        client.put(FLAG_BY_ID_URL(id)) {
             contentType(ContentType.Application.Json)
             bearerAuth(token)
             setBody(request)

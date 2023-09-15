@@ -17,6 +17,8 @@ package com.openphonics.model.response
  */
 
 
+import com.openphonics.data.entity.user.EntityClassroom
+import com.openphonics.data.entity.user.EntityUser
 import kotlinx.serialization.Serializable
 
 /**
@@ -45,6 +47,75 @@ data class AuthResponse(
             State.SUCCESS,
             message,
             token
+        )
+    }
+}
+@Serializable
+data class Student(
+    val name: String,
+    val classCode: String,
+    val native: String,
+    val progress: List<LanguageProgress>,
+){
+    companion object {
+        fun create(student: com.openphonics.data.model.user.Student) = Student(
+            student.name,
+            student.classCode,
+            student.native,
+            student.progress.map {
+                LanguageProgress.create(it)
+            }
+        )
+    }
+}
+@Serializable
+data class Classroom(
+    val className: String,
+    val classCode: String,
+    val students: List<Student>,
+
+) {
+    companion object {
+        fun create(classCode: String, classroom: com.openphonics.data.model.user.Classroom) = Classroom(
+            classroom.className,
+            classCode,
+            classroom.students.map {
+                Student.create(it)
+            },
+        )
+    }
+}
+@Serializable
+data class ClassroomResponse(
+    override val status: State,
+    override val message: String,
+    val classroom: List<Classroom> = emptyList()
+    )  : Response {
+    companion object {
+        fun unauthorized(message: String) = ClassroomResponse(
+            State.UNAUTHORIZED,
+            message
+        )
+
+        fun success(classroom: List<Classroom>) = ClassroomResponse(
+            State.SUCCESS,
+            "Task successful",
+            classroom
+        )
+        fun success(classroom: Classroom) = ClassroomResponse(
+            State.SUCCESS,
+            "Task successful",
+            listOf(classroom)
+        )
+
+        fun failed(message: String) = ClassroomResponse(
+            State.FAILED,
+            message
+        )
+
+        fun notFound(message: String) = ClassroomResponse(
+            State.NOT_FOUND,
+            message
         )
     }
 }

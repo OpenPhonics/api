@@ -1,14 +1,31 @@
 package com.openphonics
-import com.openphonics.Testing.VALID_LANGUAGE_ID
+import com.openphonics.Testing.INVALID_DATA_ID
+import com.openphonics.Testing.UPDATED_CLASS_NAME
+import com.openphonics.Testing.UPDATED_FLAG
+import com.openphonics.Testing.UPDATED_FLAG_IMG
+import com.openphonics.Testing.UPDATED_LANGUAGE_ID
+import com.openphonics.Testing.UPDATED_LANGUAGE_NAME
+import com.openphonics.Testing.UPDATED_LESSON_COUNT
+import com.openphonics.Testing.UPDATED_NATIVE_ID
+import com.openphonics.Testing.UPDATED_SENTENCE
+import com.openphonics.Testing.UPDATED_TITLE
+import com.openphonics.Testing.UPDATED_WORD
+import com.openphonics.Testing.VALID_ADMIN_CLASS_CODE
+import com.openphonics.Testing.VALID_CLASS_CODE
+import com.openphonics.Testing.VALID_CLASS_NAME
+import com.openphonics.Testing.VALID_FLAG
+import com.openphonics.Testing.VALID_FLAG_IMG
 import com.openphonics.Testing.VALID_LANGUAGE_NAME
+import com.openphonics.Testing.VALID_LESSON_COUNT
 import com.openphonics.Testing.VALID_NATIVE_ID
 import com.openphonics.Testing.VALID_ORDER
 import com.openphonics.Testing.VALID_PHONIC
+import com.openphonics.Testing.VALID_SENTENCE
 import com.openphonics.Testing.VALID_SOUND
+import com.openphonics.Testing.VALID_TITLE
 import com.openphonics.Testing.VALID_TRANSLATED_SOUND
 import com.openphonics.Testing.VALID_TRANSLATED_WORD
 import com.openphonics.Testing.VALID_WORD
-import com.openphonics.Testing.VALID_WORDS
 import com.openphonics.model.request.*
 import com.openphonics.model.response.*
 import com.openphonics.tests.Auth.invalidRegisterAdminBlankName
@@ -23,10 +40,13 @@ import com.openphonics.tests.Auth.registerAdmin
 import com.openphonics.tests.Auth.validLoginAdmin
 import com.openphonics.tests.Auth.validRegisterAdmin
 import com.openphonics.tests.Classroom.createClass
+import com.openphonics.tests.Classroom.deleteClass
+import com.openphonics.tests.Classroom.getClassroom
 import com.openphonics.tests.Classroom.invalidClassroomBlankClassCode
 import com.openphonics.tests.Classroom.invalidClassroomLongName
 import com.openphonics.tests.Classroom.invalidClassroomNumericName
-import com.openphonics.tests.Classroom.validClassroom
+import com.openphonics.tests.Classroom.updateClass
+import com.openphonics.tests.Classroom.validClassroomRequest
 import com.openphonics.tests.Flags.createFlag
 import com.openphonics.tests.Flags.deleteFlagById
 import com.openphonics.tests.Flags.getFlagById
@@ -81,11 +101,9 @@ import com.openphonics.tests.Words.invalidWordRequestInvalidTranslatedWord
 import com.openphonics.tests.Words.invalidWordRequestInvalidWord
 import com.openphonics.tests.Words.updateWordById
 import com.openphonics.tests.Words.validWordRequest
-import com.openphonics.tests.Words.wordRequest
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.statement.*
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -107,19 +125,26 @@ import com.openphonics.data.model.data.Section as SectionModel
 
 
 object Testing {
+
+    const val INVALID_DATA_ID = -1
+
     const val VALID_NATIVE_ID = "en"
+    const val UPDATED_NATIVE_ID = "en"
     const val INVALID_NUMERIC_NATIVE_ID = "e4"
     const val INVALID_LONG_NATIVE_ID = "enen"
 
     const val VALID_LANGUAGE_ID = "ta"
+    const val UPDATED_LANGUAGE_ID = "ra"
     const val INVALID_NUMERIC_LANGUAGE_ID = "e4"
     const val INVALID_LONG_LANGUAGE_ID = "enen"
 
     const val VALID_LANGUAGE_NAME = "Tamil"
+    const val UPDATED_LANGUAGE_NAME = "Engra"
     const val INVALID_NUMERIC_LANGUAGE_NAME = "T4s"
     const val INVALID_LONG_LANGUAGE_NAME = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 
     const val VALID_TITLE = "Basic Words"
+    const val UPDATED_TITLE = "Basic Numbers"
     const val INVALID_NUMERIC_TITLE = "B4 Wo4rs"
     const val INVALID_LONG_TITLE = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 
@@ -127,19 +152,22 @@ object Testing {
     const val INVALID_ORDER = -1
 
     const val VALID_LESSON_COUNT = 2
+    const val UPDATED_LESSON_COUNT = 3
     const val INVALID_LESSON_COUNT = -1
 
     const val VALID_FLAG = "in"
+    const val UPDATED_FLAG = "us"
     const val INVALID_LONG_FLAG = "ins"
     const val INVALID_NUMERIC_FLAG = "p4"
 
     const val VALID_FLAG_IMG = "https://raw.githubusercontent.com/catamphetamine/country-flag-icons/master/3x2/IN.svg"
-
+    const val UPDATED_FLAG_IMG = "https://raw.githubusercontent.com/catamphetamine/country-flag-icons/master/3x2/US.svg"
     const val VALID_CLASS_CODE = "eg3a1r"
     const val VALID_ADMIN_CLASS_CODE = "e5fe1k"
     const val BLANK_CLASS_CODE = ""
 
     const val VALID_CLASS_NAME = "Bharathi Primary"
+    const val UPDATED_CLASS_NAME = "Indian School"
     const val INVALID_LONG_CLASS_NAME = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
     const val INVALID_NUMERIC_CLASS_NAME = "A4"
 
@@ -153,12 +181,17 @@ object Testing {
     const val VALID_PHONIC = "həˈləʊ"
     const val INVALID_PHONIC = "hte4t"
     const val VALID_WORD = "hello"
-    val VALID_WORDS =  listOf("apple", "banana", "orange", "cherry", "watermelon", "grape")
+    const val UPDATED_WORD = "huh"
     const val INVALID_WORD= "he11o"
     const val VALID_TRANSLATED_WORD = "வணக்கம்"
     const val INVALID_TRANSLATED_WORD = "வணக4்கம்"
     const val VALID_SOUND = "https://api.dictionaryapi.dev/media/pronunciations/en/hello-au.mp3"
     const val VALID_TRANSLATED_SOUND = "https://api.dictionaryapi.dev/media/pronunciations/en/hello-au.mp3"
+
+    val VALID_SENTENCE = listOf("apple", "banana", "orange", "cherry", "watermelon", "grape")
+//    val VALID_SENTENCE_IDS = mutableListOf<Int>()
+    val UPDATED_SENTENCE =  listOf("orange", "apple", "banana")
+//    val UPDATED_SENTENCE_IDS = mutableListOf<Int>()
 }
 
 class ApplicationTest {
@@ -198,12 +231,17 @@ class ApplicationTest {
         suspend inline fun <reified T> extractResponse(response: HttpResponse): T {
             return response.body<T>()
         }
-        suspend fun checkBadRequestStatus(response: HttpResponse, message: String? = null) {
+        suspend fun bad(response: HttpResponse, message: String? = null) {
             assertEquals(HttpStatusCode.BadRequest, response.status , message ?: response.body())
         }
-
-        suspend fun checkOKStatus(response: HttpResponse, message: String? = null) {
+        suspend fun ok(response: HttpResponse, message: String? = null) {
             assertEquals(HttpStatusCode.OK, response.status, message ?: response.body())
+        }
+        suspend fun unauth(response: HttpResponse, message: String? = null){
+            assertEquals(HttpStatusCode.Unauthorized, response.status, message ?: response.body())
+        }
+        suspend fun not(response: HttpResponse, message: String? = null){
+            assertEquals(HttpStatusCode.NotFound, response.status, message ?: response.body())
         }
         private val sqlContainer = PostgreSQLContainer(DockerImageName.parse("postgres:13-alpine"))
 
@@ -219,166 +257,234 @@ class ApplicationTest {
             sqlContainer.stop()
         }
     }
-    @Test
-    fun test() = test() { client ->
-
-        //Register Admin
-        checkBadRequestStatus(registerAdmin(invalidRegisterAdminBlankName, client))
-        checkBadRequestStatus(registerAdmin(invalidRegisterAdminInvalidClassCode, client))
-        checkBadRequestStatus(registerAdmin(invalidRegisterAdminLongName, client))
-        checkBadRequestStatus(registerAdmin(invalidRegisterAdminShortName, client))
-        checkBadRequestStatus(registerAdmin(invalidRegisterAdminNoSpaceName, client))
-        checkBadRequestStatus(registerAdmin(invalidRegisterAdminNumericName, client))
-        checkBadRequestStatus(registerAdmin(invalidRegisterAdminWrongClassCode, client))
-        checkOKStatus(registerAdmin(validRegisterAdmin, client))
-        checkBadRequestStatus(registerAdmin(validRegisterAdmin, client))
-
-        //Login Admin
+    private suspend fun runRegisterAdminTests(client: HttpClient){
+        bad(registerAdmin(invalidRegisterAdminBlankName, client))
+        bad(registerAdmin(invalidRegisterAdminInvalidClassCode, client))
+        bad(registerAdmin(invalidRegisterAdminLongName, client))
+        bad(registerAdmin(invalidRegisterAdminShortName, client))
+        bad(registerAdmin(invalidRegisterAdminNoSpaceName, client))
+        bad(registerAdmin(invalidRegisterAdminNumericName, client))
+        bad(registerAdmin(invalidRegisterAdminWrongClassCode, client))
+        ok(registerAdmin(validRegisterAdmin, client))
+        bad(registerAdmin(validRegisterAdmin, client))
+    }
+    private suspend fun runLoginAdminTests(client: HttpClient): String {
+        unauth(login(LoginRequest("Random Name", VALID_ADMIN_CLASS_CODE), client))
         val response = login(validLoginAdmin, client)
-        checkOKStatus(response)
+        ok(response)
         val token = extractResponse<AuthResponse>(response).token
         assertNotNull(token)
-
-        //Create Classroom
-        checkBadRequestStatus(createClass(token, invalidClassroomLongName, client))
-        checkBadRequestStatus(createClass(token, invalidClassroomBlankClassCode, client))
-        checkBadRequestStatus(createClass(token, invalidClassroomNumericName, client))
-        checkOKStatus(createClass(token, validClassroom, client))
-        checkBadRequestStatus(createClass(token, validClassroom, client))
-
-        //Create Flag
-        checkBadRequestStatus(createFlag(token, invalidFlagRequestLongFlag, client))
-        checkBadRequestStatus(createFlag(token, invalidFlagRequestNumericFlag, client))
+        return token
+    }
+    private suspend fun runCreateClassroomTests(token: String, client: HttpClient): String {
+        bad(createClass(token, invalidClassroomLongName, client))
+        bad(createClass(token, invalidClassroomBlankClassCode, client))
+        bad(createClass(token, invalidClassroomNumericName, client))
+        val classResponse = createClass(token, validClassroomRequest, client)
+        ok(classResponse)
+        val classCode = extractResponse<StrIdResponse>(classResponse).id
+        assertNotNull(classCode)
+        bad(createClass(token, validClassroomRequest, client))
+        return classCode
+    }
+    private suspend fun runCreateFlagTests(token: String, client: HttpClient): String {
+        bad(createFlag(token, invalidFlagRequestLongFlag, client))
+        bad(createFlag(token, invalidFlagRequestNumericFlag, client))
         val flag = createFlag(token, validFlagRequest, client)
-        checkOKStatus(flag)
+        bad(createFlag(token, validFlagRequest, client))
+        ok(flag)
         val flagId = extractResponse<StrIdResponse>(flag).id
         assertNotNull(flagId)
-
-        //Create Language
-        checkBadRequestStatus(createLanguage(token, invalidLanguageRequestNumericNative(flagId), client))
-        checkBadRequestStatus(createLanguage(token, invalidLanguageRequestLongNative(flagId), client))
-        checkBadRequestStatus(createLanguage(token, invalidLanguageRequestNumericLanguage(flagId), client))
-        checkBadRequestStatus(createLanguage(token, invalidLanguageRequestLongLanguage(flagId), client))
-        checkBadRequestStatus(createLanguage(token, invalidLanguageRequestNumericName(flagId), client))
-        checkBadRequestStatus(createLanguage(token, invalidLanguageRequestLongName(flagId), client))
-        val language = createLanguage(token, validLanguageRequest(flagId), client)
-        checkOKStatus(language)
+        return flagId
+    }
+    private suspend fun classroom(token: String, request: ClassroomRequest, client: HttpClient): String {
+        val classroom = createClass(token, request, client)
+        ok(classroom)
+        val classCode = extractResponse<StrIdResponse>(classroom).id
+        assertNotNull(classCode)
+        return classCode
+    }
+    private suspend fun flag(token: String, request: FlagRequest, client: HttpClient): String {
+        val flag = createFlag(token, request, client)
+        ok(flag)
+        val flagId = extractResponse<StrIdResponse>(flag).id
+        assertNotNull(flagId)
+        return flagId
+    }
+    private suspend fun language(token: String, request: LanguageRequest, client: HttpClient): Int {
+        val language = createLanguage(token, request, client)
+        ok(language)
         val languageId = extractResponse<IntIdResponse>(language).id
         assertNotNull(languageId)
-        checkBadRequestStatus(createLanguage(token, validLanguageRequest(flagId), client))
-
-        //Create Unit
-        checkBadRequestStatus(createUnit(token, invalidUnitRequestInvalidLongTitle(languageId), client))
-        checkBadRequestStatus(createUnit(token, invalidUnitRequestInvalidNegativeOrder(languageId), client))
-        checkBadRequestStatus(createUnit(token, invalidUnitRequestInvalidNumericTitle(languageId), client))
-        val unit = createUnit(token, validUnitRequest(languageId), client)
-        checkOKStatus(unit)
+        return languageId
+    }
+    private suspend fun unit(token: String, request: UnitRequest, client: HttpClient): Int {
+        val unit = createUnit(token, request, client)
+        ok(unit)
         val unitId = extractResponse<IntIdResponse>(unit).id
         assertNotNull(unitId)
-
-        //Create Section
-        checkBadRequestStatus(createSection(token, invalidSectionRequestInvalidLessonCount(unitId), client))
-        checkBadRequestStatus(createSection(token, invalidSectionRequestInvalidLongTitle(unitId), client))
-        checkBadRequestStatus(createSection(token, invalidSectionRequestInvalidNegativeOrder(unitId), client))
-        checkBadRequestStatus(createSection(token, invalidSectionRequestInvalidNumericTitle(unitId), client))
-        val section = createSection(token, validSectionRequest(unitId), client)
-        checkOKStatus(section)
+        return unitId
+    }
+    private suspend fun section(token: String, request: SectionRequest, client: HttpClient): Int {
+        val section = createSection(token, request, client)
+        ok(section)
         val sectionId = extractResponse<IntIdResponse>(section).id
         assertNotNull(sectionId)
-
-        //Create Word
-        checkBadRequestStatus(createWord(token, invalidWordRequestInvalidPhonic(languageId), client))
-        checkBadRequestStatus(createWord(token, invalidWordRequestInvalidWord(languageId), client))
-        checkBadRequestStatus(createWord(token, invalidWordRequestInvalidTranslatedWord(languageId), client))
-        val word = createWord(token, validWordRequest(languageId), client)
-        checkOKStatus(word)
+        return sectionId
+    }
+    private suspend fun word(token: String, request: WordRequest, client: HttpClient): Int {
+        val word = createWord(token, request, client)
+        ok(word)
         val wordId = extractResponse<IntIdResponse>(word).id
         assertNotNull(wordId)
-
-        //Creating words for sentence
-        val words: List<Int> = VALID_WORDS.map { text ->
-            val res = createWord(
-                token, WordRequest(
-                    VALID_PHONIC,
-                    VALID_SOUND,
-                    VALID_TRANSLATED_SOUND,
-                    VALID_TRANSLATED_WORD,
-                    text,
-                    languageId
-                ), client
-            )
-            checkOKStatus(res)
-            val resId = extractResponse<IntIdResponse>(res).id
-            assertNotNull(resId)
-            resId
-        }
-
-        //Create Sentence
-        val sentence = createSentence(token, sentenceRequest(words, languageId), client)
-        checkOKStatus(sentence)
+        return wordId
+    }
+    private suspend fun sentence(token: String, request: SentenceRequest, client: HttpClient): Int {
+        val sentence = createSentence(token, request, client)
+        ok(sentence)
         val sentenceId = extractResponse<IntIdResponse>(sentence).id
         assertNotNull(sentenceId)
-
-
-        //Add Words to Section
-        words.forEach { word5 ->
-            checkOKStatus(postWordsToSection(token, sectionId, WordSectionRequest(word5), client))
+        return sentenceId
+    }
+    private suspend fun runCreateLanguageTestsWithAdminToken(token: String, flagId: String, client: HttpClient): Int{
+        bad(createLanguage(token, invalidLanguageRequestNumericNative(flagId), client))
+        bad(createLanguage(token, invalidLanguageRequestLongNative(flagId), client))
+        bad(createLanguage(token, invalidLanguageRequestNumericLanguage(flagId), client))
+        bad(createLanguage(token, invalidLanguageRequestLongLanguage(flagId), client))
+        bad(createLanguage(token, invalidLanguageRequestNumericName(flagId), client))
+        bad(createLanguage(token, invalidLanguageRequestLongName(flagId), client))
+        val id = language(token, validLanguageRequest(flagId), client)
+        bad(createLanguage(token, validLanguageRequest(flagId), client))
+        return id
+    }
+    private suspend fun runCreateUnitTestsWithAdminToken(token: String, languageId: Int, client: HttpClient): Int {
+        bad(createUnit(token, invalidUnitRequestInvalidLongTitle(languageId), client))
+        bad(createUnit(token, invalidUnitRequestInvalidNegativeOrder(languageId), client))
+        bad(createUnit(token, invalidUnitRequestInvalidNumericTitle(languageId), client))
+        return unit(token,validUnitRequest(languageId), client)
+    }
+    private suspend fun runCreateSectionTestsWithAdminToken(token: String, unitId: Int, client: HttpClient): Int {
+        bad(createSection(token, invalidSectionRequestInvalidLessonCount(unitId), client))
+        bad(createSection(token, invalidSectionRequestInvalidLongTitle(unitId), client))
+        bad(createSection(token, invalidSectionRequestInvalidNegativeOrder(unitId), client))
+        bad(createSection(token, invalidSectionRequestInvalidNumericTitle(unitId), client))
+        return section(token,validSectionRequest(unitId), client)
+    }
+    private suspend fun runCreateWordTestsWithAdminToken(token: String, languageId: Int, client: HttpClient): Int {
+        bad(createWord(token, invalidWordRequestInvalidPhonic(languageId), client))
+        bad(createWord(token, invalidWordRequestInvalidWord(languageId), client))
+        bad(createWord(token, invalidWordRequestInvalidTranslatedWord(languageId), client))
+        val id = word(token,validWordRequest(languageId), client)
+        bad(createWord(token, validWordRequest(languageId), client))
+        return id
+    }
+    private suspend fun runCreateSentenceTestsWithAdminToken(token: String, languageId: Int, client: HttpClient): Pair<Int, Map<String,Int>>{
+        val words = VALID_SENTENCE.map {
+            val response = createWord(token, WordRequest(VALID_PHONIC, VALID_SOUND, VALID_TRANSLATED_SOUND, VALID_TRANSLATED_WORD, it, languageId), client)
+            ok(response)
+            val word = extractResponse<IntIdResponse>(response).id
+            assertNotNull(word)
+            word
         }
-        words.forEach { word6 ->
-            checkBadRequestStatus(postWordsToSection(token, sectionId, WordSectionRequest(word6), client))
-        }
-
-
-        //Add Sentence to Section
-        checkOKStatus(postSentencesToSection(token, sectionId, SentenceSectionRequest(sentenceId), client))
-        checkBadRequestStatus(postSentencesToSection(token, sectionId, SentenceSectionRequest(sentenceId), client))
-
-
-        //Get Language
+        bad(createSentence(token, sentenceRequest(emptyList(), languageId), client))
+        bad(createSentence(token, sentenceRequest(listOf(INVALID_DATA_ID), languageId), client))
+        bad(createSentence(token, sentenceRequest(listOf(INVALID_DATA_ID), languageId), client))
+        bad(createSentence(token, sentenceRequest(words, INVALID_DATA_ID), client))
+        ok(createSentence(token, sentenceRequest(words, languageId), client))
+        return sentence(token, sentenceRequest(words, languageId), client) to VALID_SENTENCE.mapIndexed {index, word-> word to words[index]}.toMap()
+    }
+    private suspend fun runAddWordToSectionTestsWithAdminToken(token: String, wordId: Int, sectionId: Int, client: HttpClient) {
+        bad(postWordsToSection(token, INVALID_DATA_ID, WordSectionRequest(wordId), client))
+        bad(postWordsToSection(token, sectionId, WordSectionRequest(INVALID_DATA_ID), client))
+        ok(postWordsToSection(token, sectionId, WordSectionRequest(wordId), client))
+        bad(postWordsToSection(token, sectionId, WordSectionRequest(wordId), client))
+    }
+    private suspend fun runAddSentenceToSectionTestsWithAdminToken(token: String, sentenceId: Int, sectionId: Int, client: HttpClient) {
+        bad(postSentencesToSection(token, INVALID_DATA_ID, SentenceSectionRequest(sentenceId), client))
+        bad(postSentencesToSection(token, sectionId, SentenceSectionRequest(INVALID_DATA_ID), client))
+        ok(postSentencesToSection(token, sectionId, SentenceSectionRequest(sentenceId), client))
+        bad(postSentencesToSection(token, sectionId, SentenceSectionRequest(sentenceId), client))
+    }
+    private suspend fun runCreateDataTestsWithUserToken(token: String, flagId: String, languageId: Int, unitId: Int, sectionId: Int, wordId: Int, sentenceId: Int, client: HttpClient){
+        unauth(createFlag(token, validFlagRequest, client))
+        unauth(createLanguage(token, validLanguageRequest(flagId), client))
+        unauth(createUnit(token, validUnitRequest(languageId), client))
+        unauth(createSection(token, validSectionRequest(unitId), client))
+        unauth(createWord(token, validWordRequest(languageId), client))
+        unauth(createSentence(token, sentenceRequest(listOf(wordId), languageId), client))
+        unauth(postWordsToSection(token, sectionId, WordSectionRequest(wordId), client))
+        unauth(postSentencesToSection(token, sectionId, SentenceSectionRequest(sentenceId), client))
+    }
+    private suspend fun runGetClassroomTests(token: String, classCode: String, client: HttpClient) {
+        val classroomResponse = getClassroom(token, classCode, client)
+        ok(classroomResponse)
+        val classroomData = extractResponse<ClassroomResponse>(classroomResponse).classroom.firstOrNull()
+        assertNotNull(classroomData)
+        assertEquals(VALID_CLASS_CODE, classroomData.classCode)
+        assertEquals(VALID_CLASS_NAME, classroomData.className)
+    }
+    private suspend fun runGetFlagTests(token: String, flagId: String, client: HttpClient){
+        val flagResponse = getFlagById(token, flagId, client)
+        ok(flagResponse)
+        val flagData = extractResponse<FlagResponse>(flagResponse).flag.firstOrNull()
+        assertNotNull(flagData)
+        assertEquals(VALID_FLAG, flagData.id)
+        assertEquals(VALID_FLAG_IMG, flagData.flag)
+    }
+    private suspend fun runGetLanguageTests(token: String, languageId: Int, client: HttpClient) {
+        //get language data at depth one
         val languageResponseDepthOne = getLanguageById(token, languageId, client, null)
-        checkOKStatus(languageResponseDepthOne)
+        ok(languageResponseDepthOne)
         val languageDataDepthOne = extractResponse<LanguageResponse>(languageResponseDepthOne).language.firstOrNull()
         assertNotNull(languageDataDepthOne)
+        //validate that it contains depth one data
         assertEquals(false, languageDataDepthOne.hasData)
         assertEquals(emptyList(), languageDataDepthOne.units)
 
-        val languageResponseDepthTwo =
-            getLanguageById(token, languageId, client, DepthRequest(LanguageModel.LANGUAGE_WITH_UNITS))
-        checkOKStatus(languageResponseDepthTwo)
+        //get language data at depth two
+        val languageResponseDepthTwo = getLanguageById(token, languageId, client, DepthRequest(LanguageModel.LANGUAGE_WITH_UNITS))
+        ok(languageResponseDepthTwo)
         val languageDataDepthTwo = extractResponse<LanguageResponse>(languageResponseDepthTwo).language.firstOrNull()
         assertNotNull(languageDataDepthTwo)
+        //validate that it contains depth two data
         assertEquals(true, languageDataDepthTwo.hasData)
         assertNotEquals(emptyList<Unit>(), languageDataDepthTwo.units)
+        //check unit for correct info
+        val unit = languageDataDepthTwo.units.first()
+        assertEquals(VALID_ORDER, unit.order)
+        assertEquals(VALID_TITLE, unit.title)
+        //check that unit has depth two data
         languageDataDepthTwo.units.forEach {
             assertEquals(false, it.hasData)
             assertEquals(emptyList(), it.sections)
         }
-
-        val languageResponseDepthThree =
-            getLanguageById(token, languageId, client, DepthRequest(LanguageModel.LANGUAGE_WITH_UNITS_WITH_SECTIONS))
-        checkOKStatus(languageResponseDepthThree)
-        val languageDataDepthThree =
-            extractResponse<LanguageResponse>(languageResponseDepthThree).language.firstOrNull()
+        //get language data at depth three
+        val languageResponseDepthThree = getLanguageById(token, languageId, client, DepthRequest(LanguageModel.LANGUAGE_WITH_UNITS_WITH_SECTIONS))
+        ok(languageResponseDepthThree)
+        val languageDataDepthThree = extractResponse<LanguageResponse>(languageResponseDepthThree).language.firstOrNull()
         assertNotNull(languageDataDepthThree)
+        //check language contains data
         assertEquals(true, languageDataDepthThree.hasData)
         assertNotEquals(emptyList<Unit>(), languageDataDepthThree.units)
-        languageDataDepthThree.units.forEach { unit1 ->
-            assertEquals(true, unit1.hasData)
-            assertNotEquals(emptyList<Section>(), unit1.sections)
-            unit1.sections.forEach {
+        languageDataDepthThree.units.forEach { unit ->
+            //Check unit has correct depth
+            assertEquals(true, unit.hasData)
+            assertNotEquals(emptyList<Section>(), unit.sections)
+            //Check section has correct data
+            val section = unit.sections.first()
+            assertEquals(VALID_ORDER, section.order)
+            assertEquals(VALID_TITLE, section.title)
+            assertEquals(VALID_LESSON_COUNT, section.lessonCount)
+            //Check section has correct depth
+            unit.sections.forEach {
                 assertEquals(false, it.hasData)
                 assertEquals(emptyList(), it.sentences)
                 assertEquals(emptyList(), it.words)
             }
         }
-
-        val languageResponseDepthFour = getLanguageById(
-            token,
-            languageId,
-            client,
-            DepthRequest(LanguageModel.LANGUAGE_WITH_UNITS_WITH_SECTION_WITH_LESSON_DATA)
-        )
-        checkOKStatus(languageResponseDepthFour)
+        //get language at depth four
+        val languageResponseDepthFour = getLanguageById(token, languageId, client, DepthRequest(LanguageModel.LANGUAGE_WITH_UNITS_WITH_SECTION_WITH_LESSON_DATA))
+        ok(languageResponseDepthFour)
         val languageDataDepthFour = extractResponse<LanguageResponse>(languageResponseDepthFour).language.firstOrNull()
         assertNotNull(languageDataDepthFour)
         assertEquals(true, languageDataDepthFour.hasData)
@@ -387,231 +493,289 @@ class ApplicationTest {
             assertEquals(true, unit1.hasData)
             assertNotEquals(emptyList<Section>(), unit1.sections)
             unit1.sections.forEach {
+                val sentence = it.sentences.first()
+                val word = it.words.first()
+                //check word has correct data
+                assertEquals(VALID_PHONIC, word.phonic)
+                assertEquals(VALID_SOUND, word.sound)
+                assertEquals(VALID_TRANSLATED_SOUND, word.translatedSound)
+                assertEquals(VALID_TRANSLATED_WORD, word.translatedWord)
+                assertEquals(VALID_WORD, word.word)
+                //check sentence has correct data
+                sentence.sentence.forEachIndexed {index, word ->
+                    assertEquals(VALID_SENTENCE[index], word.word)
+                }
                 assertEquals(true, it.hasData)
-                assertNotEquals(emptyList<Section>(), it.words)
-                assertNotEquals(emptyList<Section>(), it.sentences)
+                assertNotEquals(emptyList<Word>(), it.words)
+                assertNotEquals(emptyList<Sentence>(), it.sentences)
             }
         }
-
-        //Get Unit
+    }
+    private suspend fun runGetUnitTests(token: String, unitId: Int, client: HttpClient){
         val unitResponseDepthOne = getUnitById(token, unitId, client, DepthRequest(UnitModel.UNIT))
-        checkOKStatus(unitResponseDepthOne)
+        ok(unitResponseDepthOne)
         val unitDataDepthOne = extractResponse<UnitResponse>(unitResponseDepthOne).unit.firstOrNull()
         assertNotNull(unitDataDepthOne)
         assertEquals(false, unitDataDepthOne.hasData)
         assertEquals(emptyList(), unitDataDepthOne.sections)
-
-        //Get Section
+    }
+    private suspend fun runGetSectionTests(token: String, sectionId: Int, client: HttpClient){
         val sectionResponseDepthOne = getSectionById(token, sectionId, client, DepthRequest(SectionModel.SECTION))
-        checkOKStatus(sectionResponseDepthOne)
+        ok(sectionResponseDepthOne)
         val sectionDataDepthOne = extractResponse<SectionResponse>(sectionResponseDepthOne).section.firstOrNull()
         assertNotNull(sectionDataDepthOne)
         assertEquals(false, sectionDataDepthOne.hasData)
         assertEquals(emptyList(), sectionDataDepthOne.words)
         assertEquals(emptyList(), sectionDataDepthOne.sentences)
-
-        //Get Word
+    }
+    private suspend fun runGetWordTests(token: String, wordId: Int, client: HttpClient){
         val wordResponse = getWordById(token, wordId, client)
-        checkOKStatus(wordResponse)
-        val wordData = extractResponse<WordResponse>(wordResponse).word.firstOrNull()
-        assertNotNull(wordData)
-        assertEquals(VALID_PHONIC, wordData.phonic)
-        assertEquals(VALID_SOUND, wordData.sound)
-        assertEquals(VALID_TRANSLATED_SOUND, wordData.translatedSound)
-        assertEquals(VALID_TRANSLATED_WORD, wordData.translatedWord)
-        assertEquals(VALID_WORD, wordData.word)
-        assertEquals(languageId, wordData.language)
-
-        //Get Sentence
+        ok(wordResponse)
+        val word = extractResponse<WordResponse>(wordResponse).word.firstOrNull()
+        assertNotNull(word)
+        assertEquals(VALID_PHONIC, word.phonic)
+        assertEquals(VALID_SOUND, word.sound)
+        assertEquals(VALID_TRANSLATED_SOUND, word.translatedSound)
+        assertEquals(VALID_TRANSLATED_WORD, word.translatedWord)
+        assertEquals(VALID_WORD, word.word)
+    }
+    private suspend fun runGetSentenceTests(token: String, sentenceId: Int, wordId: Int, client: HttpClient){
         val sentenceResponse = getSentenceById(token, sentenceId, client)
-        checkOKStatus(sentenceResponse)
+        ok(sentenceResponse)
         val sentenceData = extractResponse<SentenceResponse>(sentenceResponse).sentence.firstOrNull()
         assertNotNull(sentenceData)
-        sentenceData.sentence.forEachIndexed { index, word1 ->
-            assertEquals(word1.word, VALID_WORDS[index])
+        sentenceData.sentence.forEachIndexed {index, word ->
+            assertEquals(VALID_SENTENCE[index], word.word)
         }
-
-        //Updated Flag
-        val newFlagImg = "https://raw.githubusercontent.com/catamphetamine/country-flag-icons/master/3x2/US.svg"
-        checkOKStatus(updateFlagById(token, FlagRequest(newFlagImg, flagId), client))
+    }
+    private suspend fun runUpdatedClassroomTestsWithAdminToken(token: String, classCode: String, client: HttpClient){
+        ok(updateClass(token, classCode, UpdateClassroomRequest(UPDATED_CLASS_NAME), client))
+        val classResponseUpdated = getClassroom(token, classCode,client)
+        ok(classResponseUpdated)
+        val classDataUpdated = extractResponse<ClassroomResponse>(classResponseUpdated).classroom.firstOrNull()
+        assertNotNull(classDataUpdated)
+        assertEquals(UPDATED_CLASS_NAME, classDataUpdated.className)
+    }
+    private suspend fun runUpdatedFlagTestsWithAdminToken(token: String, flagId: String, client: HttpClient){
+        ok(updateFlagById(token, flagId, UpdateFlagRequest(UPDATED_FLAG_IMG), client))
         val flagResponseUpdated = getFlagById(token, flagId, client)
-        checkOKStatus(flagResponseUpdated)
+        ok(flagResponseUpdated)
         val flagDataUpdated = extractResponse<FlagResponse>(flagResponseUpdated).flag.firstOrNull()
         assertNotNull(flagDataUpdated)
-        assertEquals(newFlagImg, flagDataUpdated.flag)
-
-        //New Flag
-        val newFlag = createFlag(token, FlagRequest(newFlagImg, "us"), client)
-        checkOKStatus(newFlag)
-        val newFlagId = extractResponse<StrIdResponse>(newFlag).id
-        assertNotNull(newFlagId)
-
-        //Update Language
-        val newLanguageLanguageId = "ra"
-        checkOKStatus(updateLanguageById(
-            token,
-            languageId,
-            LanguageRequest(VALID_NATIVE_ID, newLanguageLanguageId, VALID_LANGUAGE_NAME, newFlagId),
-            client
-        ))
+        assertEquals(UPDATED_FLAG_IMG, flagDataUpdated.flag)
+    }
+    private suspend fun runUpdatedLanguageTestsWithAdminToken(token: String, languageId: Int, client: HttpClient){
+        val newFlagId = flag(token, FlagRequest(UPDATED_FLAG_IMG, UPDATED_FLAG), client)
+        ok(updateLanguageById(token, languageId, LanguageRequest(UPDATED_NATIVE_ID, UPDATED_LANGUAGE_ID, UPDATED_LANGUAGE_NAME, newFlagId), client))
         val languageResponseUpdated = getLanguageById(token, languageId, client, DepthRequest(LanguageModel.LANGUAGE))
-        checkOKStatus(languageResponseUpdated)
+        ok(languageResponseUpdated)
         val languageDataUpdated = extractResponse<LanguageResponse>(languageResponseUpdated).language.firstOrNull()
         assertNotNull(languageDataUpdated)
-        assertEquals(newLanguageLanguageId, languageDataUpdated.languageId)
-        assertEquals(VALID_NATIVE_ID, languageDataUpdated.nativeId)
+        assertEquals(UPDATED_LANGUAGE_ID, languageDataUpdated.languageId)
+        assertEquals(UPDATED_NATIVE_ID, languageDataUpdated.nativeId)
+        assertEquals(UPDATED_LANGUAGE_NAME, languageDataUpdated.languageName)
         assertEquals(newFlagId, languageDataUpdated.flag)
-
-        //Create New Language
-        val newLanguage = createLanguage(token, validLanguageRequest(flagId), client)
-        checkOKStatus(newLanguage)
-        val newLanguageId = extractResponse<IntIdResponse>(newLanguage).id
-        assertNotNull(newLanguageId)
-
-        //Update Unit
-        val newTitle = "Random Title"
-        val newLessonCount = 5
-        checkOKStatus(updateUnitById(token, unitId, UpdateUnitRequest(newTitle, VALID_ORDER), client))
+    }
+    private suspend fun runUpdatedUnitTestsWithAdminToken(token: String, unitId: Int, client: HttpClient){
+        ok(updateUnitById(token, unitId, UpdateUnitRequest(UPDATED_TITLE, VALID_ORDER), client))
         val unitResponseUpdated = getUnitById(token, unitId, client, DepthRequest(UnitModel.UNIT))
-        checkOKStatus(unitResponseUpdated)
+        ok(unitResponseUpdated)
         val unitDataUpdated = extractResponse<UnitResponse>(unitResponseUpdated).unit.firstOrNull()
         assertNotNull(unitDataUpdated)
-        assertEquals(newTitle, unitDataUpdated.title)
+        assertEquals(UPDATED_TITLE, unitDataUpdated.title)
         assertEquals(VALID_ORDER, unitDataUpdated.order)
-
-        //Create New Unit
-        val newUnit = createUnit(token, validUnitRequest(newLanguageId), client)
-        checkOKStatus(newUnit)
-        val newUnitId = extractResponse<IntIdResponse>(newUnit).id
-        assertNotNull(newUnitId)
-
-        val newUnitOK = createUnit(token, validUnitRequest(languageId), client)
-        checkOKStatus(newUnitOK)
-        val newUnitIdOK = extractResponse<IntIdResponse>(newUnitOK).id
-        assertNotNull(newUnitIdOK)
-
-        //Update Section
-        checkBadRequestStatus(updateSectionById(token, sectionId, SectionRequest(newTitle, VALID_ORDER, newLessonCount, newUnitId), client))
-        checkOKStatus(updateSectionById(token, sectionId, SectionRequest(newTitle, VALID_ORDER, newLessonCount, newUnitIdOK), client))
+    }
+    private suspend fun runUpdatedSectionTestsWithAdminToken(token: String, languageId: Int, sectionId: Int, client: HttpClient){
+        val newUnitId = unit(token, UnitRequest(VALID_TITLE, VALID_ORDER, languageId), client)
+        bad(updateSectionById(token, sectionId, SectionRequest(UPDATED_TITLE, VALID_ORDER, UPDATED_LESSON_COUNT, INVALID_DATA_ID), client))
+        ok(updateSectionById(token, sectionId, SectionRequest(UPDATED_TITLE, VALID_ORDER, UPDATED_LESSON_COUNT, newUnitId), client))
         val sectionResponseUpdated = getSectionById(token, sectionId, client, DepthRequest(SectionModel.SECTION))
-        checkOKStatus(sectionResponseUpdated)
+        ok(sectionResponseUpdated)
         val sectionDataUpdated = extractResponse<SectionResponse>(sectionResponseUpdated).section.firstOrNull()
         assertNotNull(sectionDataUpdated)
-        assertEquals(newTitle, sectionDataUpdated.title)
-        assertEquals(newLessonCount, sectionDataUpdated.lessonCount)
+        assertEquals(UPDATED_TITLE, sectionDataUpdated.title)
+        assertEquals(UPDATED_LESSON_COUNT, sectionDataUpdated.lessonCount)
         assertEquals(VALID_ORDER, sectionDataUpdated.order)
-        assertEquals(newUnitIdOK, sectionDataUpdated.unit)
-
-        //Update Word
-        val newWord = "random"
-        checkOKStatus(updateWordById(
+        assertEquals(newUnitId, sectionDataUpdated.unit)
+    }
+    private suspend fun runUpdatedWordTestsWithAdminToken(token: String, wordId: Int, client: HttpClient){
+        ok(updateWordById(
             token,
             wordId,
-            UpdateWordRequest(VALID_PHONIC, VALID_SOUND, VALID_TRANSLATED_SOUND, VALID_TRANSLATED_WORD, newWord),
+            UpdateWordRequest(VALID_PHONIC, VALID_SOUND, VALID_TRANSLATED_SOUND, VALID_TRANSLATED_WORD, UPDATED_WORD),
             client
         ))
         val wordResponseUpdated = getWordById(token, wordId, client)
-        checkOKStatus(wordResponseUpdated)
+        ok(wordResponseUpdated)
         val wordDataUpdated = extractResponse<WordResponse>(wordResponseUpdated).word.firstOrNull()
         assertNotNull(wordDataUpdated)
         assertEquals(VALID_PHONIC, wordDataUpdated.phonic)
         assertEquals(VALID_SOUND, wordDataUpdated.sound)
         assertEquals(VALID_TRANSLATED_SOUND, wordDataUpdated.translatedSound)
         assertEquals(VALID_TRANSLATED_WORD, wordDataUpdated.translatedWord)
-        assertEquals(newWord, wordDataUpdated.word)
-
-        //Updated Sentence
-        val newWordIdList = words.shuffled() + words.shuffled()
-        val newWordList = newWordIdList.map { id ->
-            val res = getWordById(token, id, client)
-            checkOKStatus(res)
-            val resWord = extractResponse<WordResponse>(res).word.firstOrNull()
-            assertNotNull(resWord)
-            resWord.word
-        }
-        checkOKStatus(updateSentenceById(token, sentenceId, UpdateSentenceRequest(newWordIdList), client))
+        assertEquals(UPDATED_WORD, wordDataUpdated.word)
+    }
+    private suspend fun runUpdatedSentenceTestsWithAdminToken(token: String, words: Map<String, Int>, sentenceId: Int, client: HttpClient){
+        val wordIds = UPDATED_SENTENCE.map {words[it]!!}
+        ok(updateSentenceById(token, sentenceId, UpdateSentenceRequest(wordIds), client))
         val sentenceResponseUpdated = getSentenceById(token, sentenceId, client)
-        checkOKStatus(sentenceResponseUpdated)
+        ok(sentenceResponseUpdated)
         val sentenceDataUpdated = extractResponse<SentenceResponse>(sentenceResponseUpdated).sentence.firstOrNull()
         assertNotNull(sentenceDataUpdated)
-        sentenceDataUpdated.sentence.forEachIndexed { index, word1 ->
-            assertEquals(word1.word, newWordList[index])
+        sentenceDataUpdated.sentence.forEachIndexed { index, word ->
+            assertEquals(UPDATED_SENTENCE[index],word.word )
         }
 
-        //Update Words in Section
-        val newSectionWordIds = words.subList(0, 2)
-        val newSectionWords = newSectionWordIds.map { id ->
-            val res = getWordById(token, id, client)
-            checkOKStatus(res)
-            val resWord = extractResponse<WordResponse>(res).word.firstOrNull()
-            assertNotNull(resWord)
-            resWord.word
+    }
+    private suspend fun runUpdatedWordSectionTestsWithAdminToken(token: String, wordId: Int, words: Map<String, Int>, sectionId: Int, client: HttpClient) {
+        ok(deleteWordsToSection(token, sectionId, WordSectionRequest(wordId), client))
+        VALID_SENTENCE.forEach {
+            ok(postWordsToSection(token, sectionId, WordSectionRequest(words[it]!!), client))
         }
-        words.forEach { word7 ->
-            checkOKStatus(deleteWordsToSection(token, sectionId, WordSectionRequest(word7), client))
+        VALID_SENTENCE.forEach {
+            bad(postWordsToSection(token, sectionId, WordSectionRequest(words[it]!!), client))
         }
-        newSectionWordIds.forEach {word8 ->
-            checkOKStatus(postWordsToSection(token, sectionId, WordSectionRequest(word8), client))
-        }
-        val sectionResponseWithWords =
-            getSectionById(token, sectionId, client, DepthRequest(SectionModel.SECTIONS_WITH_LESSON_DATA))
-        checkOKStatus(sentenceResponseUpdated)
+        val sectionResponseWithWords = getSectionById(token, sectionId, client, DepthRequest(SectionModel.SECTIONS_WITH_LESSON_DATA))
+        ok(sectionResponseWithWords)
         val sectionDataWithWords = extractResponse<SectionResponse>(sectionResponseWithWords).section.firstOrNull()
         assertNotNull(sectionDataWithWords)
-        sectionDataWithWords.words.forEachIndexed { index, word1 ->
-            assertEquals(word1.word, newSectionWords[index])
+        sectionDataWithWords.words.forEachIndexed { index, word ->
+            assertEquals(VALID_SENTENCE[index], word.word)
         }
+    }
+    private suspend fun runUpdatedSentenceSectionTestsWithAdminToken(token: String, sentenceId: Int, words: Map<String, Int>, sectionId: Int, client: HttpClient) {
+        ok(deleteSentencesToSection(token, sectionId, SentenceSectionRequest(sentenceId), client))
+        val sectionResponseWithWords = getSectionById(token, sectionId, client, DepthRequest(SectionModel.SECTIONS_WITH_LESSON_DATA))
+        ok(sectionResponseWithWords)
+        val sectionDataWithWords = extractResponse<SectionResponse>(sectionResponseWithWords).section.firstOrNull()
+        assertNotNull(sectionDataWithWords)
+        assertEquals(0, sectionDataWithWords.sentences.size)
+        ok(postSentencesToSection(token, sectionId, SentenceSectionRequest(sentenceId), client))
+        bad(postSentencesToSection(token, sectionId, SentenceSectionRequest(sentenceId), client))
+    }
+    private suspend fun runRegisterUserTests(languageId: Int, client: HttpClient) {
+
+    }
+    private suspend fun runLoginUserTests(client: HttpClient): String {
+        return ""
+    }
+    @Test
+    fun test() = test() { client ->
+
+        //register admin
+        runRegisterAdminTests(client)
+
+        //login admin
+        val adminToken = runLoginAdminTests(client)
+
+        //create classroom
+        val classCode = runCreateClassroomTests(adminToken, client)
+
+        //create flag
+        val flagId = runCreateFlagTests(adminToken, client)
+
+        //create language
+        val languageId = runCreateLanguageTestsWithAdminToken(adminToken, flagId, client)
+
+        //create unit
+        val unitId = runCreateUnitTestsWithAdminToken(adminToken, languageId, client)
+
+        //create section
+        val sectionId = runCreateSectionTestsWithAdminToken(adminToken, unitId, client)
+
+        //create word
+        val wordId = runCreateWordTestsWithAdminToken(adminToken, languageId, client)
+
+        //create sentence
+        val (sentenceId, wordIds) = runCreateSentenceTestsWithAdminToken(adminToken, languageId, client)
+
+        //add word to section
+        runAddWordToSectionTestsWithAdminToken(adminToken, wordId, sectionId, client)
+
+        //add sentence to section
+        runAddSentenceToSectionTestsWithAdminToken(adminToken, sentenceId, sectionId, client)
+
+        //register user
+        runRegisterUserTests(languageId, client)
+
+        //login user
+        val userToken = runLoginUserTests(client)
+
+        //try to create unauth data
+        runCreateDataTestsWithUserToken(userToken, flagId, languageId, unitId, sectionId, wordId, sentenceId, client)
+
+        //get classroom
+//        runGetClassroomTests(userToken, classCode, client)
+        runGetClassroomTests(adminToken, classCode, client)
+
+        //get flag
+//        runGetFlagTests(userToken, flagId, client)
+        runGetFlagTests(adminToken, flagId, client)
+
+        //get language
+//        runGetLanguageTests(userToken, languageId, client)
+        runGetLanguageTests(adminToken, languageId, client)
+
+        //get unit
+//        runGetUnitTests(userToken, unitId, client)
+        runGetUnitTests(adminToken, unitId, client)
+
+        //get section
+//        runGetSectionTests(userToken, sectionId, client)
+        runGetSectionTests(adminToken, sectionId, client)
+
+        //get word
+//        runGetWordTests(userToken, wordId, client)
+        runGetWordTests(adminToken, wordId, client)
+
+        //get sentence
+//        runGetSentenceTests(userToken, sentenceId, wordId, client)
+        runGetSentenceTests(adminToken, sentenceId, wordId, client)
+
+
+        //updated classroom
+        runUpdatedClassroomTestsWithAdminToken(adminToken, classCode, client)
+
+        //updated flag
+        runUpdatedFlagTestsWithAdminToken(adminToken, flagId, client)
+
+        //updated language
+        runUpdatedLanguageTestsWithAdminToken(adminToken, languageId, client)
+
+        //updated unit
+        runUpdatedUnitTestsWithAdminToken(adminToken, unitId, client)
+
+        //updated section
+        runUpdatedSectionTestsWithAdminToken(adminToken, languageId, sectionId, client)
+
+        //updated word
+        runUpdatedWordTestsWithAdminToken(adminToken, wordId, client)
+
+        //updated sentence
+        runUpdatedSentenceTestsWithAdminToken(adminToken, wordIds, sentenceId, client)
+
+        //updated word in sections
+        runUpdatedWordSectionTestsWithAdminToken(adminToken, wordId, wordIds, sectionId, client)
 
         //Update Sentences in Section
-        val newSectionSentenceData = (1..4).map { words.shuffled() }
-        val newSectionSentences = newSectionSentenceData.map { sentence3 ->
-            val res = createSentence(token, SentenceRequest(languageId, sentence3), client)
-            checkOKStatus(res)
-            val resSentence = extractResponse<IntIdResponse>(res).id
-            assertNotNull(resSentence)
-            resSentence
-        }
-        checkOKStatus(deleteSentencesToSection(token, sectionId, SentenceSectionRequest(sentenceId), client))
-        newSectionSentences.forEach { sentence4 ->
-            checkOKStatus(postSentencesToSection(token, sectionId, SentenceSectionRequest(sentence4), client))
-        }
-        val sectionResponseWithSentences =
-            getSectionById(token, sectionId, client, DepthRequest(SectionModel.SECTIONS_WITH_LESSON_DATA))
-        checkOKStatus(sentenceResponseUpdated)
-        val sectionDataWithSentences =
-            extractResponse<SectionResponse>(sectionResponseWithSentences).section.firstOrNull()
-        assertNotNull(sectionDataWithSentences)
-        assertEquals(4, sectionDataWithSentences.sentences.size)
-        sectionDataWithSentences.sentences.forEachIndexed { index, sentence1 ->
-            sentence1.sentence.forEachIndexed { wordIndex, word ->
-                assertEquals(word.id, newSectionSentenceData[index][wordIndex])
-            }
-        }
+        runUpdatedSentenceSectionTestsWithAdminToken(adminToken, sentenceId, wordIds, sectionId, client)
 
-        val flags = getFlags(token, client)
-        checkOKStatus(flags)
-        val flagsData = extractResponse<FlagResponse>(flags).flag
-        assertEquals(2, flagsData.size)
+        ok(deleteClass(adminToken, classCode, client))
+        bad(deleteClass(adminToken, classCode, client))
+        bad(getClassroom(adminToken, classCode, client))
 
-        val languages = getLanguages(token, client, DepthRequest(LanguageModel.LANGUAGE))
-        checkOKStatus(languages)
-        val languagesData = extractResponse<LanguageResponse>(languages).language
-        assertEquals(2, languagesData.size)
+        ok(deleteWordById(adminToken, wordIds[VALID_SENTENCE[0]]!!, client))
+        not(deleteWordById(adminToken, wordIds[VALID_SENTENCE[0]]!!, client))
+        not(getWordById(adminToken, wordIds[VALID_SENTENCE[0]]!!, client))
+        not(getSentenceById(adminToken, sentenceId, client))
 
-        //Should clear all language data
-        checkOKStatus(deleteSentenceById(token, sentenceId, client))
-        checkOKStatus(deleteWordById(token, wordId, client))
-        checkOKStatus(deleteSectionById(token, sectionId, client))
-        checkOKStatus(deleteUnitById(token, unitId, client))
-        checkOKStatus(deleteLanguageById(token, languageId, client))
-        checkOKStatus(deleteLanguageById(token, newLanguageId, client))
-        words.forEach {word2->
-            deleteWordById(token, word2, client)
-        }
-        newSectionSentences.forEach { sentence1 ->
-            deleteSentenceById(token, sentence1, client)
-        }
-        checkOKStatus(deleteFlagById(token, newFlagId, client))
-        checkOKStatus(deleteFlagById(token, flagId, client))
+        not(deleteSentenceById(adminToken, sentenceId, client))
+
+
+        ok(deleteLanguageById(adminToken, languageId, client))
+        not(getLanguageById(adminToken, languageId, client, null))
+        not(getUnitById(adminToken, unitId, client, null))
+        not(getSectionById(adminToken, sectionId, client, null))
+        ok(deleteFlagById(adminToken, flagId, client))
     }
 }

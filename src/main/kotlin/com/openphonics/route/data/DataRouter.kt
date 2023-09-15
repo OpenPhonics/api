@@ -379,13 +379,13 @@ private fun Route.getFlagById(controller: Lazy<DataController>){
 }
 
 private fun Route.updateFlagById(controller: Lazy<DataController>){
-    put<Data.Flag>{flag ->
+    put<Data.Flag.Id>{flag ->
         val principal = call.principal<UserPrincipal>()
             ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
-        val flagRequest  = runCatching { call.receive<FlagRequest>() }.getOrElse {
+        val flagRequest  = runCatching { call.receive<UpdateFlagRequest>() }.getOrElse {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_DATA)
         }
-        val flagResponse = controller.get().updateFlag(principal.user, flagRequest)
+        val flagResponse = controller.get().updateFlag(principal.user, flag.id, flagRequest)
         val response = generateHttpResponse(flagResponse)
         call.respond(response.code,flagResponse)
     }
