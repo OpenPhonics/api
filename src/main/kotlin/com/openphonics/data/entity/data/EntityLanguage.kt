@@ -16,9 +16,7 @@ class EntityLanguage(id: EntityID<Int>) : IntEntity(id) {
     var flag by Languages.flag
 
     private val _units by lazy {
-        transaction {
-            EntityUnit.find { Units.language eq id }
-        }
+        EntityUnit.find { Units.language eq id }
     }
 
     val units get() = _units

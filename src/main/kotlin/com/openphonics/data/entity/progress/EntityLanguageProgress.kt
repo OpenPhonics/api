@@ -22,9 +22,7 @@ class EntityLanguageProgress(id: EntityID<UUID>) : UUIDEntity(id) {
     var xp by LanguagesProgress.xp
     var updated by LanguagesProgress.updated
     private val _units by lazy {
-        transaction {
-            EntityUnitProgress.find { UnitsProgress.language eq id }
-        }
+        EntityUnitProgress.find { UnitsProgress.language eq id }
     }
     val units get() = _units
 }

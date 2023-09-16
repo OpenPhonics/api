@@ -1,12 +1,16 @@
 package com.openphonics.data.dao
 import com.openphonics.data.database.table.data.*
+import com.openphonics.data.database.table.progress.LanguagesProgress
 import com.openphonics.data.database.table.progress.SectionsProgress
+import com.openphonics.data.database.table.progress.UnitsProgress
 import com.openphonics.data.database.table.references.SectionProgressLearnedWordCrossRefs
 import com.openphonics.data.database.table.references.SectionSentenceCrossRefs
 import com.openphonics.data.database.table.references.SectionWordCrossRefs
 import com.openphonics.data.database.table.references.SentenceWordCrossRefs
 import com.openphonics.data.entity.data.*
+import com.openphonics.data.entity.progress.EntityLanguageProgress
 import com.openphonics.data.entity.progress.EntitySectionProgress
+import com.openphonics.data.entity.progress.EntityUnitProgress
 import com.openphonics.data.entity.references.EntitySectionProgressLearnedWordCrossRef
 import com.openphonics.data.entity.references.EntitySectionSentenceCrossRef
 import com.openphonics.data.entity.references.EntitySectionWordCrossRef
@@ -143,11 +147,20 @@ class DataDaoImpl @Inject constructor() : DataDao {
         languageId: Int
     ): Int = transaction {
         val max = updateUnitOrder(order, languageId)
-        EntityUnit.new {
+        val unit = EntityUnit.new {
             this.title = title
             this.order = min(max, order)
             this.language = EntityLanguage[languageId]
-        }.id.value
+        }
+        EntityLanguageProgress.find {
+            LanguagesProgress.language eq languageId
+        }.forEach {languageProgress ->
+            EntityUnitProgress.new {
+                this.language = languageProgress
+                this.unit = unit
+            }
+        }
+        unit.id.value
     }
     override fun addSection(
         title: String,
@@ -156,12 +169,21 @@ class DataDaoImpl @Inject constructor() : DataDao {
         unitId: Int
     ): Int = transaction {
         val max = updateSectionOrder(order, unitId)
-        EntitySection.new {
+        val section = EntitySection.new {
             this.title = title
             this.order = min(max, order)
             this.lessonCount = lessonCount
             this.unit = EntityUnit[unitId]
-        }.id.value
+        }
+        EntityUnitProgress.find {
+            UnitsProgress.unit eq unitId
+        }.forEach {
+            EntitySectionProgress.new {
+                this.unit = it
+                this.section = section
+            }
+        }
+        section.id.value
     }
     override fun addWordToSection(wordId: Int, sectionId: Int): Int = transaction {
         EntitySectionWordCrossRef.new {
@@ -172,20 +194,21 @@ class DataDaoImpl @Inject constructor() : DataDao {
     override fun removeWordFromSection(wordId: Int, sectionId: Int): Boolean = transaction{
         EntitySectionWordCrossRef.find {
             (SectionWordCrossRefs.section eq sectionId) and (SectionWordCrossRefs.word eq wordId)
-        }.firstOrNull()
-            ?.let {word->
-                word.run {
+        }.firstOrNull()?.let {word->
+            word.run {
+                delete()
+            }
+            EntitySectionProgressLearnedWordCrossRef.find {
+                (SectionProgressLearnedWordCrossRefs.learnedWord eq wordId)
+            }.filter {
+                EntitySectionProgress[it.section].section.id.value == sectionId
+            }.forEach {
+                it.run{
                     delete()
                 }
-                EntitySectionProgressLearnedWordCrossRef.find {
-                    (SectionProgressLearnedWordCrossRefs.learnedWord eq wordId)
-                }.forEach {learnedWord ->
-                    learnedWord.run {
-                        delete()
-                    }
-                }
-                return@transaction true
             }
+            return@transaction true
+        }
         return@transaction false
     }
     override fun addSentenceToSection(sentenceId: Int, sectionId: Int): Int = transaction {
@@ -223,13 +246,11 @@ class DataDaoImpl @Inject constructor() : DataDao {
             this.language = EntityLanguage[languageId]
         }.id.value
     }
-
     override fun addFlag(flagImg: String, flagId: String): String  = transaction{
         EntityFlag.new(flagId){
             this.flag = flagImg
         }.id.value
     }
-
     override fun getAllFlags(): List<Flag> = transaction{
         EntityFlag.all().map {
             Flag.fromEntity(it)
@@ -431,19 +452,13 @@ class DataDaoImpl @Inject constructor() : DataDao {
     override fun deleteLanguage(languageId: Int): Boolean = transaction {
         val eLanguage = EntityLanguage.findById(languageId)
         eLanguage?.run {
-//            eLanguage.units.map { unit ->
-//                deleteUnit(unit.id.value)
-//            }
-//            EntityWord.find { Words.language eq eLanguage.id }.forEach { word ->
-//                word.run {
-//                    delete()
-//                }
-//            }
-//            EntitySentence.find { Sentences.language eq eLanguage.id }.forEach { sentence ->
-//                sentence.run {
-//                    delete()
-//                }
-//            }
+            EntityLanguageProgress.find {
+                LanguagesProgress.language eq languageId
+            }.forEach {
+                it.run{
+                    delete()
+                }
+            }
             delete()
             return@transaction true
         }
@@ -453,9 +468,13 @@ class DataDaoImpl @Inject constructor() : DataDao {
     override fun deleteUnit(unitId: Int): Boolean = transaction {
         val eUnit = EntityUnit.find { (Units.id eq unitId) }.firstOrNull()
         eUnit?.run {
-//            eUnit.sections.map { section ->
-//                deleteSection(section.id.value)
-//            }
+            EntityUnitProgress.find {
+                UnitsProgress.unit eq unitId
+            }.forEach {
+                it.run{
+                    delete()
+                }
+            }
             delete()
             return@transaction true
         }
@@ -465,18 +484,13 @@ class DataDaoImpl @Inject constructor() : DataDao {
     override fun deleteSection(sectionId: Int): Boolean = transaction {
         val eSection = EntitySection.find { (Sections.id eq sectionId) }.firstOrNull()
         eSection?.run {
-//            EntitySectionWordCrossRef.find { SectionWordCrossRefs.section eq eSection.id }
-//                .forEach { ref ->
-//                    ref.run {
-//                        delete()
-//                    }
-//                }
-//            EntitySectionSentenceCrossRef.find { SectionSentenceCrossRefs.section eq eSection.id }
-//                .forEach { ref ->
-//                    ref.run {
-//                        delete()
-//                    }
-//                }
+            EntitySectionProgress.find {
+                SectionsProgress.section eq sectionId
+            }.forEach {
+                it.run{
+                    delete()
+                }
+            }
             delete()
             return@transaction true
         }

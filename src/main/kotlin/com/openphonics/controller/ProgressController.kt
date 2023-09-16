@@ -14,8 +14,9 @@ import com.openphonics.data.entity.references.EntitySectionProgressLearnedWordCr
 import com.openphonics.data.model.user.User
 import com.openphonics.model.request.*
 import com.openphonics.model.response.StrIdResponse
-import com.openphonics.model.response.UnitProgressResponse
-import com.openphonics.utils.isAlphaNumeric
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -56,6 +57,9 @@ class ProgressController @Inject constructor(
     fun addLanguageProgress(user: User, language: LanguageProgressRequest): StrIdResponse {
         return try {
             checkDataExistsOrThrowException(language.languageId, EntityLanguage)
+            if (progressDao.languageProgressExists(language.languageId, user.id)){
+                throw BadRequestException("User already signed up for this language")
+            }
             val languageProgressId = progressDao.addLanguageProgress(user.id, language.languageId)
             StrIdResponse.success(languageProgressId)
         } catch (bre: BadRequestException) {
@@ -79,7 +83,14 @@ class ProgressController @Inject constructor(
     }
     fun updateStreak(user: User, languageProgressId: String, streak: StreakRequest): StrIdResponse {
         return try {
+
             checkProgressExistsOrThrowException(languageProgressId, EntityLanguageProgress)
+            val updated = progressDao.getLanguageProgress(languageProgressId, 0)!!.updated
+            val updatedTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(updated), ZoneId.systemDefault())
+            val nowTime =  LocalDateTime.now().toLocalDate()
+            if (nowTime.dayOfYear == updatedTime.dayOfYear && nowTime.year == updatedTime.year){
+                throw BadRequestException("You cannot update the streak")
+            }
             checkOwnerOrThrowException(user.id, languageProgressId, EntityLanguageProgress)
             val id = progressDao.updateStreak(languageProgressId, streak.continueStreak)
             StrIdResponse.success(id)

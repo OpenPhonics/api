@@ -22,7 +22,7 @@ import org.jetbrains.exposed.sql.ReferenceOption
 
 object Users : UUIDTable() {
     val name = varchar("name", length = 30)
-    val classCode = reference("class_code", Classrooms)
+    val classCode = reference("class_code", Classrooms, onDelete = ReferenceOption.CASCADE)
     val native = char("native", length = 2)
     var currentLanguage = reference("current_language", LanguagesProgress).nullable()
     var isAdmin = bool("admin").default(false)

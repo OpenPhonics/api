@@ -63,6 +63,7 @@ interface LanguageProgressDao {
         languageId: String,
         streakContinued: Boolean
     ): String
+    fun languageProgressExists(languageId: Int, userId: String): Boolean
 }
 
 interface UnitProgressDao {
@@ -91,6 +92,11 @@ class ProgressDaoImpl @Inject constructor(
         EntityLanguageProgress.findById(UUID.fromString(languageProgressId))?.let {
             LanguageProgress.fromEntity(it, depth)
         }
+    }
+    override fun languageProgressExists(languageId: Int, userId: String): Boolean = transaction {
+        EntityLanguageProgress.find {
+            (LanguagesProgress.language eq languageId) and (LanguagesProgress.user eq UUID.fromString(userId))
+        }.firstOrNull() != null
     }
     override fun addLanguageProgress(userId: String, languageId: Int): String = transaction {
         val language = EntityLanguage[languageId]
@@ -209,29 +215,9 @@ class ProgressDaoImpl @Inject constructor(
 
     override fun isOwnedByUser(progressId: String, userId: String, type: Any): Boolean = transaction {
         when (type) {
-            EntityLanguageProgress ->
-                (LanguagesProgress innerJoin Users)
-                    .slice(LanguagesProgress.id)
-                    .select {
-                        (LanguagesProgress.id eq UUID.fromString(progressId)) and (Users.id eq UUID.fromString(userId))
-                    }
-                    .count() > 0
-
-            EntityUnitProgress ->
-                (UnitsProgress innerJoin LanguagesProgress innerJoin Users)
-                    .slice(UnitsProgress.id)
-                    .select {
-                        (UnitsProgress.id eq UUID.fromString(progressId)) and (Users.id eq UUID.fromString(userId))
-                    }
-                    .count() > 0
-
-            EntitySectionProgress ->
-                (SectionsProgress innerJoin UnitsProgress innerJoin LanguagesProgress innerJoin Users)
-                    .slice(SectionsProgress.id)
-                    .select {
-                        (SectionsProgress.id eq UUID.fromString(progressId)) and (Users.id eq UUID.fromString(userId))
-                    }
-                    .count() > 0
+            EntityLanguageProgress -> EntityLanguageProgress[UUID.fromString(progressId)].user.id.value.toString() == userId
+            EntityUnitProgress ->EntityUnitProgress[UUID.fromString(progressId)].language.user.id.value.toString() == userId
+            EntitySectionProgress ->EntitySectionProgress[UUID.fromString(progressId)].unit.language.user.id.value.toString() == userId
             else -> false
         }
     }

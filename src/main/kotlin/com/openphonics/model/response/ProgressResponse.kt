@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 data class LanguageProgress(
     val progressId: String = "",
     val started: Long = 0,
+    val updated: Long = 0,
     val streak: Int = 0,
     val xp: Int = 0,
     val nativeId: String = "",
@@ -20,6 +21,7 @@ data class LanguageProgress(
         fun create(languageProgress: com.openphonics.data.model.progress.LanguageProgress): LanguageProgress = LanguageProgress(
             languageProgress.progressId,
             languageProgress.started,
+            languageProgress.updated,
             languageProgress.streak,
             languageProgress.xp,
             languageProgress.nativeId,

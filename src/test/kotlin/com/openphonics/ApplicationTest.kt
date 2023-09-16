@@ -1,4 +1,5 @@
 package com.openphonics
+import com.openphonics.data.model.progress.LanguageProgress as LanguageProgressModel
 import com.openphonics.Testing.INVALID_DATA_ID
 import com.openphonics.Testing.UPDATED_CLASS_NAME
 import com.openphonics.Testing.UPDATED_FLAG
@@ -35,10 +36,20 @@ import com.openphonics.tests.Auth.invalidRegisterAdminNoSpaceName
 import com.openphonics.tests.Auth.invalidRegisterAdminNumericName
 import com.openphonics.tests.Auth.invalidRegisterAdminShortName
 import com.openphonics.tests.Auth.invalidRegisterAdminWrongClassCode
+import com.openphonics.tests.Auth.invalidRegisterUserBlankName
+import com.openphonics.tests.Auth.invalidRegisterUserInvalidClassCode
+import com.openphonics.tests.Auth.invalidRegisterUserLongName
+import com.openphonics.tests.Auth.invalidRegisterUserNoSpaceName
+import com.openphonics.tests.Auth.invalidRegisterUserNumericName
+import com.openphonics.tests.Auth.invalidRegisterUserShortName
+import com.openphonics.tests.Auth.invalidRegisterUserWrongClassCode
 import com.openphonics.tests.Auth.login
 import com.openphonics.tests.Auth.registerAdmin
+import com.openphonics.tests.Auth.registerUser
 import com.openphonics.tests.Auth.validLoginAdmin
+import com.openphonics.tests.Auth.validLoginUser
 import com.openphonics.tests.Auth.validRegisterAdmin
+import com.openphonics.tests.Auth.validRegisterUser
 import com.openphonics.tests.Classroom.createClass
 import com.openphonics.tests.Classroom.deleteClass
 import com.openphonics.tests.Classroom.getClassroom
@@ -55,6 +66,13 @@ import com.openphonics.tests.Flags.invalidFlagRequestLongFlag
 import com.openphonics.tests.Flags.invalidFlagRequestNumericFlag
 import com.openphonics.tests.Flags.updateFlagById
 import com.openphonics.tests.Flags.validFlagRequest
+import com.openphonics.tests.LanguageProgress
+import com.openphonics.tests.LanguageProgress.createLanguageProgress
+import com.openphonics.tests.LanguageProgress.deleteLanguageProgress
+import com.openphonics.tests.LanguageProgress.getLanguageProgress
+import com.openphonics.tests.LanguageProgress.getLanguageProgressById
+import com.openphonics.tests.LanguageProgress.updateLanguageProgress
+import com.openphonics.tests.LanguageProgress.updateStreakLanguageProgress
 import com.openphonics.tests.Languages.createLanguage
 import com.openphonics.tests.Languages.deleteLanguageById
 import com.openphonics.tests.Languages.getLanguageById
@@ -67,6 +85,7 @@ import com.openphonics.tests.Languages.invalidLanguageRequestNumericName
 import com.openphonics.tests.Languages.invalidLanguageRequestNumericNative
 import com.openphonics.tests.Languages.updateLanguageById
 import com.openphonics.tests.Languages.validLanguageRequest
+import com.openphonics.tests.SectionProgress.updateSectionProgress
 import com.openphonics.tests.Sections.createSection
 import com.openphonics.tests.Sections.deleteSectionById
 import com.openphonics.tests.Sections.deleteSentencesToSection
@@ -119,6 +138,7 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import com.openphonics.data.model.data.Language as LanguageModel
 import com.openphonics.data.model.data.Unit as UnitModel
 import com.openphonics.data.model.data.Section as SectionModel
@@ -643,7 +663,7 @@ class ApplicationTest {
             assertEquals(VALID_SENTENCE[index], word.word)
         }
     }
-    private suspend fun runUpdatedSentenceSectionTestsWithAdminToken(token: String, sentenceId: Int, words: Map<String, Int>, sectionId: Int, client: HttpClient) {
+    private suspend fun runUpdatedSentenceSectionTestsWithAdminToken(token: String, sentenceId: Int, sectionId: Int, client: HttpClient) {
         ok(deleteSentencesToSection(token, sectionId, SentenceSectionRequest(sentenceId), client))
         val sectionResponseWithWords = getSectionById(token, sectionId, client, DepthRequest(SectionModel.SECTIONS_WITH_LESSON_DATA))
         ok(sectionResponseWithWords)
@@ -654,10 +674,78 @@ class ApplicationTest {
         bad(postSentencesToSection(token, sectionId, SentenceSectionRequest(sentenceId), client))
     }
     private suspend fun runRegisterUserTests(languageId: Int, client: HttpClient) {
-
+        bad(registerUser(invalidRegisterUserBlankName(languageId), client))
+        bad(registerUser(invalidRegisterUserInvalidClassCode(languageId), client))
+        bad(registerUser(invalidRegisterUserLongName(languageId), client))
+        bad(registerUser(invalidRegisterUserShortName(languageId), client))
+        bad(registerUser(invalidRegisterUserNoSpaceName(languageId), client))
+        bad(registerUser(invalidRegisterUserNumericName(languageId), client))
+        bad(registerUser(invalidRegisterUserWrongClassCode(languageId), client))
+        ok(registerUser(validRegisterUser(languageId), client))
+        bad(registerUser(validRegisterUser(languageId), client))
     }
     private suspend fun runLoginUserTests(client: HttpClient): String {
-        return ""
+        unauth(login(LoginRequest("Random Name", VALID_CLASS_CODE), client))
+        val response = login(validLoginUser, client)
+        ok(response)
+        val token = extractResponse<AuthResponse>(response).token
+        assertNotNull(token)
+        return token
+    }
+    private suspend fun runGetLanguageProgressTests(token: String, client: HttpClient, unitCount: Int, sectionCount: Int){
+        val languageProgressResponse = getLanguageProgress(token, DepthRequest(LanguageProgressModel.LANGUAGE_WITH_UNITS_WITH_SECTION_WITH_LESSON_DATA), client)
+        ok(languageProgressResponse)
+        val languageProgressData = extractResponse<LanguageProgressResponse>(languageProgressResponse).progress.firstOrNull()
+        assertNotNull(languageProgressData)
+        assertEquals(unitCount, languageProgressData.units.size)
+        var foundSectionCount = 0
+        languageProgressData.units.forEach {
+            foundSectionCount += it.sections.size
+        }
+        assertEquals(sectionCount, foundSectionCount)
+    }
+    private suspend fun runCreateLanguageProgressTests(adminToken: String, token: String,flagId: String,  client: HttpClient): String {
+        val languageId = language(adminToken, LanguageRequest("en", "no", "Nana", flagId), client)
+        val createResponse = createLanguageProgress(token, LanguageProgressRequest(languageId), client)
+        ok(createResponse)
+        val newProgressId = extractResponse<StrIdResponse>(createResponse).id
+        assertNotNull(newProgressId)
+        val langProgressResponse = getLanguageProgressById(token, newProgressId, null, client)
+        ok(langProgressResponse)
+        val langProgressData = extractResponse<LanguageProgressResponse>(langProgressResponse).progress.firstOrNull()
+        assertNotNull(langProgressData)
+        return langProgressData.progressId
+    }
+    private suspend fun runUpdateLanguageProgressTests(token: String, progressId: String, client: HttpClient) {
+        ok(updateLanguageProgress(token, progressId, XPRequest(10), client))
+        bad(updateStreakLanguageProgress(token, progressId, StreakRequest(true), client))
+        val langProgressResponse = getLanguageProgressById(token, progressId, null, client)
+        ok(langProgressResponse)
+        val langProgressData = extractResponse<LanguageProgressResponse>(langProgressResponse).progress.firstOrNull()
+        assertNotNull(langProgressData)
+        assertEquals(10, langProgressData.xp)
+        assertEquals(0, langProgressData.streak)
+    }
+    private suspend fun runUpdateSectionProgressTests(token: String, progressId: String, client: HttpClient){
+        val languageProgressResponse = getLanguageProgressById(token, progressId, DepthRequest(LanguageProgressModel.LANGUAGE_WITH_UNITS_WITH_SECTIONS), client)
+        ok(languageProgressResponse)
+        val languageProgressData = extractResponse<LanguageProgressResponse>(languageProgressResponse).progress.firstOrNull()
+        assertNotNull(languageProgressData)
+        languageProgressData.units.forEach {
+            it.sections.forEach {
+                updateSectionProgress(token, it.progressId, SectionProgressRequest(1, true, emptyList()), client)
+            }
+        }
+        val updatedLanguageProgressResponse = getLanguageProgressById(token, progressId, DepthRequest(LanguageProgressModel.LANGUAGE_WITH_UNITS_WITH_SECTIONS), client)
+        ok(updatedLanguageProgressResponse)
+        val updatedLanguageProgressData = extractResponse<LanguageProgressResponse>(updatedLanguageProgressResponse).progress.firstOrNull()
+        assertNotNull(updatedLanguageProgressData)
+        updatedLanguageProgressData.units.forEach {
+            it.sections.forEach {
+                assertEquals(1, it.currentLesson)
+                assertEquals(true, it.isLegendary)
+            }
+        }
     }
     @Test
     fun test() = test() { client ->
@@ -701,38 +789,45 @@ class ApplicationTest {
         //login user
         val userToken = runLoginUserTests(client)
 
+        //check language progress
+        runGetLanguageProgressTests(userToken, client, 1, 1)
+        val progressId = runCreateLanguageProgressTests(adminToken, userToken, flagId, client)
+
         //try to create unauth data
         runCreateDataTestsWithUserToken(userToken, flagId, languageId, unitId, sectionId, wordId, sentenceId, client)
 
         //get classroom
-//        runGetClassroomTests(userToken, classCode, client)
+        runGetClassroomTests(userToken, classCode, client)
         runGetClassroomTests(adminToken, classCode, client)
 
         //get flag
-//        runGetFlagTests(userToken, flagId, client)
+        runGetFlagTests(userToken, flagId, client)
         runGetFlagTests(adminToken, flagId, client)
 
         //get language
-//        runGetLanguageTests(userToken, languageId, client)
+        runGetLanguageTests(userToken, languageId, client)
         runGetLanguageTests(adminToken, languageId, client)
 
         //get unit
-//        runGetUnitTests(userToken, unitId, client)
+        runGetUnitTests(userToken, unitId, client)
         runGetUnitTests(adminToken, unitId, client)
 
         //get section
-//        runGetSectionTests(userToken, sectionId, client)
+        runGetSectionTests(userToken, sectionId, client)
         runGetSectionTests(adminToken, sectionId, client)
 
         //get word
-//        runGetWordTests(userToken, wordId, client)
+        runGetWordTests(userToken, wordId, client)
         runGetWordTests(adminToken, wordId, client)
 
         //get sentence
-//        runGetSentenceTests(userToken, sentenceId, wordId, client)
+        runGetSentenceTests(userToken, sentenceId, wordId, client)
         runGetSentenceTests(adminToken, sentenceId, wordId, client)
 
-
+        //update language progress
+        runUpdateLanguageProgressTests(userToken, progressId, client)
+        runUpdateSectionProgressTests(userToken, progressId, client)
+        ok(deleteLanguageProgress(userToken, progressId, client))
         //updated classroom
         runUpdatedClassroomTestsWithAdminToken(adminToken, classCode, client)
 
@@ -758,7 +853,17 @@ class ApplicationTest {
         runUpdatedWordSectionTestsWithAdminToken(adminToken, wordId, wordIds, sectionId, client)
 
         //Update Sentences in Section
-        runUpdatedSentenceSectionTestsWithAdminToken(adminToken, sentenceId, wordIds, sectionId, client)
+        runUpdatedSentenceSectionTestsWithAdminToken(adminToken, sentenceId, sectionId, client)
+
+
+        //test that language updates translate to progress updates
+        val newUnitId = runCreateUnitTestsWithAdminToken(adminToken, languageId, client)
+        val newSectionId = runCreateSectionTestsWithAdminToken(adminToken, unitId, client)
+        runGetLanguageProgressTests(userToken, client, 3, 2)
+        deleteUnitById(adminToken, newUnitId, client)
+        deleteSectionById(adminToken, newSectionId, client)
+        runGetLanguageProgressTests(userToken, client, 2, 1)
+
 
         ok(deleteClass(adminToken, classCode, client))
         bad(deleteClass(adminToken, classCode, client))

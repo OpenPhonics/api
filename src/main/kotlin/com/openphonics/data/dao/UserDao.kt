@@ -54,7 +54,9 @@ interface UserDao {
 
 
 @Singleton
-class UserDaoImpl @Inject constructor() : UserDao {
+class UserDaoImpl @Inject constructor(
+    val languageDao: ProgressDao
+) : UserDao {
     override fun getClass(classCode: String): Classroom  = transaction {
         EntityClassroom[classCode].let {Classroom.fromEntity(it)}
     }
@@ -97,13 +99,10 @@ class UserDaoImpl @Inject constructor() : UserDao {
             this.isAdmin = false
             this.currentLanguage = null
         }
-        val lang = EntityLanguageProgress.new {
-            this.user = EntityUser[user.id.value]
-            this.language = EntityLanguage[language]
-        }.id.value
+        val lang = languageDao.addLanguageProgress(user.id.value.toString(), language)
 
         EntityLanguageProgress.find {
-            (LanguagesProgress.id eq lang)
+            (LanguagesProgress.id eq UUID.fromString(lang))
         }.firstOrNull()?.let {
             user.apply {
                 this.currentLanguage = it.id

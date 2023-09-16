@@ -6,6 +6,7 @@ import com.openphonics.data.entity.progress.EntityLanguageProgress
 data class LanguageProgress(
     val progressId: String,
     val started: Long,
+    val updated: Long,
     val streak: Int,
     val xp: Int,
     val nativeId: String,
@@ -24,6 +25,7 @@ data class LanguageProgress(
         fun fromEntity(entity: EntityLanguageProgress, depth:Int) = LanguageProgress(
             entity.id.value.toString(),
             entity.started.millis,
+            entity.updated.millis,
             entity.streak,
             entity.xp,
             entity.language.nativeId,

@@ -12,11 +12,10 @@ import com.openphonics.Testing.INVALID_SHORT_NAME
 import com.openphonics.Testing.VALID_ADMIN_CLASS_CODE
 import com.openphonics.Testing.VALID_CLASS_CODE
 import com.openphonics.Testing.VALID_CLASS_NAME
+import com.openphonics.Testing.VALID_LANGUAGE_ID
 import com.openphonics.Testing.VALID_NAME
-import com.openphonics.model.request.AdminSignUpRequest
-import com.openphonics.model.request.ClassroomRequest
-import com.openphonics.model.request.LoginRequest
-import com.openphonics.model.request.UpdateClassroomRequest
+import com.openphonics.Testing.VALID_NATIVE_ID
+import com.openphonics.model.request.*
 import com.openphonics.model.response.AuthResponse
 import com.openphonics.model.response.StrIdResponse
 import com.openphonics.route.auth.Routing
@@ -88,53 +87,114 @@ object Classroom {
 }
 object Auth {
     const val REGISTER_URL = "${Routing.AUTH}/${Routing.REGISTER}/${Routing.ADMIN}"
+    const val REGISTER_USER_URL = "${Routing.AUTH}/${Routing.REGISTER}"
     const val LOGIN_URL = "${Routing.AUTH}/${Routing.LOGIN}"
+    val userRequest: (String, String, String) -> (Int) -> UserSignUpRequest = { name, classCode, native ->
+        {languageId ->
+            UserSignUpRequest(
+                name,
+                classCode,
+                native,
+                languageId
+            )
+        }
+    }
     val validRegisterAdmin = AdminSignUpRequest(
         VALID_NAME,
         VALID_ADMIN_CLASS_CODE
+    )
+    val validRegisterUser = userRequest(
+        VALID_NAME,
+        VALID_CLASS_CODE,
+        VALID_NATIVE_ID,
     )
 
     val invalidRegisterAdminBlankName = AdminSignUpRequest(
         INVALID_BLANK_NAME,
         VALID_ADMIN_CLASS_CODE
     )
+    val invalidRegisterUserBlankName = userRequest(
+        INVALID_BLANK_NAME,
+        VALID_CLASS_CODE,
+        VALID_NATIVE_ID,
+    )
 
     val invalidRegisterAdminShortName = AdminSignUpRequest(
         INVALID_SHORT_NAME,
         VALID_ADMIN_CLASS_CODE
+    )
+    val invalidRegisterUserShortName = userRequest(
+        INVALID_SHORT_NAME,
+        VALID_CLASS_CODE,
+        VALID_NATIVE_ID,
     )
 
     val invalidRegisterAdminLongName = AdminSignUpRequest(
         INVALID_LONG_NAME,
         VALID_ADMIN_CLASS_CODE
     )
+    val invalidRegisterUserLongName = userRequest(
+        INVALID_LONG_NAME,
+        VALID_CLASS_CODE,
+        VALID_NATIVE_ID,
+    )
 
     val invalidRegisterAdminNumericName = AdminSignUpRequest(
         INVALID_NUMERIC_NAME,
         VALID_ADMIN_CLASS_CODE
+    )
+    val invalidRegisterUserNumericName = userRequest(
+        INVALID_NUMERIC_NAME,
+        VALID_CLASS_CODE,
+        VALID_NATIVE_ID,
     )
 
     val invalidRegisterAdminNoSpaceName = AdminSignUpRequest(
         INVALID_NO_SPACE_NAME,
         VALID_ADMIN_CLASS_CODE
     )
+    val invalidRegisterUserNoSpaceName = userRequest(
+        INVALID_NO_SPACE_NAME,
+        VALID_CLASS_CODE,
+        VALID_NATIVE_ID,
+    )
     val invalidRegisterAdminWrongClassCode = AdminSignUpRequest(
         VALID_NAME,
         VALID_CLASS_CODE
+    )
+    val invalidRegisterUserWrongClassCode = userRequest(
+        VALID_NAME,
+        VALID_ADMIN_CLASS_CODE,
+        VALID_NATIVE_ID
     )
 
     val invalidRegisterAdminInvalidClassCode = AdminSignUpRequest(
         VALID_NAME,
         BLANK_CLASS_CODE
     )
+    val invalidRegisterUserInvalidClassCode = userRequest(
+        VALID_NAME,
+        BLANK_CLASS_CODE,
+        VALID_NATIVE_ID
+    )
 
     val validLoginAdmin = LoginRequest(
         VALID_NAME,
         VALID_ADMIN_CLASS_CODE
     )
+    val validLoginUser = LoginRequest(
+        VALID_NAME,
+        VALID_CLASS_CODE
+    )
 
     val registerAdmin: suspend (AdminSignUpRequest?, HttpClient) -> HttpResponse = { data, client ->
         client.post(REGISTER_URL) {
+            contentType(ContentType.Application.Json)
+            setBody(data)
+        }
+    }
+    val registerUser: suspend (UserSignUpRequest?, HttpClient) -> HttpResponse = { data, client ->
+        client.post(REGISTER_USER_URL) {
             contentType(ContentType.Application.Json)
             setBody(data)
         }

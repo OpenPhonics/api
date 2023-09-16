@@ -19,17 +19,13 @@ class EntitySection(id: EntityID<Int>) : IntEntity(id) {
     var order by Sections.order
 
     private val _words by lazy {
-        transaction {
-            EntitySectionWordCrossRef.find { SectionWordCrossRefs.section eq id}
-                .mapNotNull { EntityWord.findById(it.word) }
-        }
+        EntitySectionWordCrossRef.find { SectionWordCrossRefs.section eq id}
+            .mapNotNull { EntityWord.findById(it.word) }
     }
 
     private val _sentences by lazy {
-        transaction {
-            EntitySectionSentenceCrossRef.find { SectionSentenceCrossRefs.section eq id}
-                .mapNotNull { EntitySentence.findById(it.sentence) }
-        }
+        EntitySectionSentenceCrossRef.find { SectionSentenceCrossRefs.section eq id}
+            .mapNotNull { EntitySentence.findById(it.sentence) }
     }
 
     val words get() = _words

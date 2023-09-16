@@ -15,9 +15,7 @@ class EntityUnit(id: EntityID<Int>) : IntEntity(id) {
     var title by Units.title
     var order by Units.order
     private val _sections by lazy {
-        transaction {
-            EntitySection.find { Sections.unit eq id }
-        }
+        EntitySection.find { Sections.unit eq id }
     }
 
     val sections get() = _sections

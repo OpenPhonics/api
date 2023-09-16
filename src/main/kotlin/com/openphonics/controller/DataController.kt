@@ -51,8 +51,8 @@ class DataController @Inject constructor(
             val languageId  = language.languageId
             val languageName = language.languageName
             val flag = language.flag
-            validateLanguageRequestOrThrowException(nativeId, languageId, languageName, flag)
             validateAdmin(user)
+            validateLanguageRequestOrThrowException(nativeId, languageId, languageName, flag)
             val responseId = dataDao.addLanguage(nativeId, languageId, languageName, flag)
             IntIdResponse.success(responseId)
         } catch (bre: BadRequestException) {
@@ -117,8 +117,8 @@ class DataController @Inject constructor(
             val title = unit.title
             val order  = unit.order
             val language = unit.languageId
-            validateUnitRequestOrThrowException(title, order, language)
             validateAdmin(user)
+            validateUnitRequestOrThrowException(title, order, language)
             val responseId = dataDao.addUnit(title, order, language)
             IntIdResponse.success(responseId)
         } catch (bre: BadRequestException) {
@@ -181,8 +181,8 @@ class DataController @Inject constructor(
             val order = section.order
             val lessonCount = section.lessonCount
             val unit = section.unitId
-            validateSectionRequestOrThrowException(title, order, lessonCount, unit)
             validateAdmin(user)
+            validateSectionRequestOrThrowException(title, order, lessonCount, unit)
             val responseId = dataDao.addSection(title, order, lessonCount, unit)
             IntIdResponse.success(responseId)
         } catch (bre: BadRequestException) {
@@ -248,8 +248,8 @@ class DataController @Inject constructor(
             val translateWord = word.translatedWord
             val text = word.word
             val languageId = word.languageId
-            validateWordRequestOrThrowException(phonic, sound, translatedSound, translateWord, text, languageId)
             validateAdmin(user)
+            validateWordRequestOrThrowException(phonic, sound, translatedSound, translateWord, text, languageId)
             val responseId = dataDao.addWord(phonic, sound ,translatedSound, translateWord, text, languageId)
             IntIdResponse.success(responseId)
         } catch (bre: BadRequestException) {
@@ -312,8 +312,8 @@ class DataController @Inject constructor(
         return try {
             val language = sentence.languageId
             val words = sentence.words
-            validateSentenceRequestOrThrowException(language, words)
             validateAdmin(user)
+            validateSentenceRequestOrThrowException(language, words)
             val responseId = dataDao.addSentence(language, words)
             IntIdResponse.success(responseId)
         } catch (bre: BadRequestException) {
@@ -476,10 +476,10 @@ class DataController @Inject constructor(
         return try {
             val img = flag.flag
             val id = flag.id
+            validateAdmin(user)
             validateFlagRequestOrThrowException(img, id)
             if (dataDao.flagExists(id))
                 throw BadRequestException("Flag already exist")
-            validateAdmin(user)
             val responseId = dataDao.addFlag(img, id)
             StrIdResponse.success(responseId)
         } catch (bre: BadRequestException) {

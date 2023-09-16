@@ -21,10 +21,8 @@ class EntitySectionProgress(id: EntityID<UUID>) : UUIDEntity(id) {
     var isLegendary by SectionsProgress.isLegendary
     var section by EntitySection referencedOn SectionsProgress.section
     private val _learnedWords by lazy {
-        transaction {
-            EntitySectionProgressLearnedWordCrossRef.find { SectionProgressLearnedWordCrossRefs.section eq id }
-                .mapNotNull { EntityWord.findById(it.learnedWord) }
-        }
+        EntitySectionProgressLearnedWordCrossRef.find { SectionProgressLearnedWordCrossRefs.section eq id }
+            .mapNotNull { EntityWord.findById(it.learnedWord) }
     }
 
     val learnedWords get() = _learnedWords

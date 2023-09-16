@@ -15,9 +15,7 @@ class EntityUnitProgress(id: EntityID<UUID>) : UUIDEntity(id) {
     var language by EntityLanguageProgress referencedOn UnitsProgress.language
     var unit by EntityUnit referencedOn  UnitsProgress.unit
     private val _sections by lazy {
-        transaction {
-            EntitySectionProgress.find { SectionsProgress.unit eq id }
-        }
+        EntitySectionProgress.find { SectionsProgress.unit eq id }
     }
     val sections get() = _sections
 }
