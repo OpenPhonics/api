@@ -41,6 +41,22 @@ class ProgressController @Inject constructor(
             LanguageProgressResponse.notFound(nfe.message)
         }
     }
+    fun getCurrentLanguageProgress(user: User, depth: DepthRequest): LanguageProgressResponse {
+        return try {
+            validateDepthOrThrowException(depth.depth)
+            if (user.currentLanguage == null) throw UnauthorizedActivityException("User does not have a current language")
+            checkProgressExistsOrThrowException(user.currentLanguage, EntityLanguageProgress)
+            checkOwnerOrThrowException(user.id, user.currentLanguage, EntityLanguageProgress)
+            val languageProgress = progressDao.getLanguageProgress(user.currentLanguage, depth.depth)!!
+            LanguageProgressResponse.success(LanguageProgress.create(languageProgress))
+        } catch (bre: BadRequestException) {
+            LanguageProgressResponse.failed(bre.message)
+        } catch (uae: UnauthorizedActivityException) {
+            LanguageProgressResponse.unauthorized(uae.message)
+        } catch (nfe: NotFoundException) {
+            LanguageProgressResponse.notFound(nfe.message)
+        }
+    }
     fun getAllProgressByUser(user: User, depth: DepthRequest): LanguageProgressResponse {
         return try {
             validateDepthOrThrowException(depth.depth)

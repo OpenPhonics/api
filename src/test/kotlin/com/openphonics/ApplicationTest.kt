@@ -451,6 +451,18 @@ class ApplicationTest {
         assertEquals(VALID_FLAG, flagData.id)
         assertEquals(VALID_FLAG_IMG, flagData.flag)
     }
+    private suspend fun runGetAllLanguagesTests(nativeId: String, client: HttpClient){
+        val languagesResponse = getLanguages(nativeId, client, null)
+        ok(languagesResponse)
+        val languagesData = extractResponse<LanguageResponse>(languagesResponse).language
+        assertEquals(2, languagesData.size, message = languagesData.toString())
+    }
+    private suspend fun runGetAllFlagsTests(client: HttpClient){
+        val flagsResponse = getFlags(client)
+        ok(flagsResponse)
+        val flagsData = extractResponse<FlagResponse>(flagsResponse).flag
+        assertEquals(2, flagsData.size, message = flagsData.toString())
+    }
     private suspend fun runGetLanguageTests(token: String, languageId: Int, client: HttpClient) {
         //get language data at depth one
         val languageResponseDepthOne = getLanguageById(token, languageId, client, null)
@@ -793,6 +805,10 @@ class ApplicationTest {
         runGetLanguageProgressTests(userToken, client, 1, 1)
         val progressId = runCreateLanguageProgressTests(adminToken, userToken, flagId, client)
 
+        runGetAllLanguagesTests("en", client)
+
+
+
         //try to create unauth data
         runCreateDataTestsWithUserToken(userToken, flagId, languageId, unitId, sectionId, wordId, sentenceId, client)
 
@@ -836,6 +852,8 @@ class ApplicationTest {
 
         //updated language
         runUpdatedLanguageTestsWithAdminToken(adminToken, languageId, client)
+
+        runGetAllFlagsTests(client)
 
         //updated unit
         runUpdatedUnitTestsWithAdminToken(adminToken, unitId, client)

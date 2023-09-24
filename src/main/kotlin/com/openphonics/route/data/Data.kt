@@ -11,19 +11,29 @@ object Routing {
     const val SENTENCES = "sentences"
     const val FLAGS = "flags"
     const val ID = "{id}"
+    const val ALL = "all"
+    const val NATIVE = "{native}"
     const val CREATE = "new"
     const val WORD = "word"
     const val SENTENCE = "sentence"
+    const val CURRENT = "current"
 
 }
 @Resource(Routing.DATA)
 class Data(){
     @Resource(Routing.LANGUAGES)
     class Language(val parent: Data = Data()){
+        @Resource(Routing.ALL)
+        class All(val parent: Language = Language()) {
+            @Resource(Routing.NATIVE)
+            class Native(val parent: All = All(), val native: String)
+        }
         @Resource(Routing.ID)
         class Id(val parent: Language = Language(),  val id: Int)
         @Resource(Routing.CREATE)
         class Create(val parent: Language = Language())
+        @Resource(Routing.CURRENT)
+        class Current(val parent: Language = Language())
     }
     @Resource(Routing.FLAGS)
     class Flag(val parent: Data = Data()){

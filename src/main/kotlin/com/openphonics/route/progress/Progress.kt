@@ -11,6 +11,7 @@ object Routing {
     const val STREAK = "streak"
     const val ID = "{id}"
     const val CREATE = "new"
+    const val CURRENT = "current"
 }
 @Resource(Routing.PROGRESS)
 class Progress(){
@@ -21,6 +22,8 @@ class Progress(){
             @Resource(Routing.STREAK)
             class Streak(val parent: Id)
         }
+        @Resource(Routing.CURRENT)
+        class Current(val parent: LanguageProgress = LanguageProgress())
 
         @Resource(Routing.CREATE)
         class Create(val parent: LanguageProgress = LanguageProgress())

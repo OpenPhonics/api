@@ -22,7 +22,6 @@ import io.ktor.server.application.*
 import io.ktor.util.*
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
-
 @KtorExperimentalAPI
 fun Application.module() {
     configureDI()

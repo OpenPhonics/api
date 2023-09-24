@@ -26,5 +26,4 @@ data class Unit(
             entity.id.value
         )
     }
-
 }

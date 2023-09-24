@@ -74,10 +74,8 @@ object Flags {
             bearerAuth(token)
         }
     }
-    val getFlags: suspend (String, HttpClient) -> HttpResponse = { token, client ->
-        client.get(FLAGS_URL){
-            bearerAuth(token)
-        }
+    val getFlags: suspend (HttpClient) -> HttpResponse = { client ->
+        client.get(FLAGS_URL)
     }
     val getFlagById: suspend (String, String, HttpClient) -> HttpResponse = {token, id, client ->
         client.get(FLAG_BY_ID_URL(id)){
@@ -111,7 +109,7 @@ object Flags {
 }
 object Languages {
 
-    const val LANGUAGES_URL = "${Routing.DATA}/${Routing.LANGUAGES}"
+    val LANGUAGES_URL: (String) -> String = {native: String ->"${Routing.DATA}/${Routing.LANGUAGES}/${Routing.ALL}/${native}"}
     val LANGUAGE_BY_ID_URL: (Int) -> String = {id: Int ->"${Routing.DATA}/${Routing.LANGUAGES}/${id}"}
     const val CREATE_LANGUAGE_URL = "${Routing.DATA}/${Routing.LANGUAGES}/${Routing.CREATE}"
     val languageRequest: (String, String, String) -> (String) -> LanguageRequest = { native, language, name ->
@@ -173,10 +171,9 @@ object Languages {
         val token: String,
         val language: Int
     )
-    val getLanguages: suspend (String, HttpClient, DepthRequest?) -> HttpResponse = { token, client, depth ->
-        client.get(LANGUAGES_URL) {
+    val getLanguages: suspend (String, HttpClient, DepthRequest?) -> HttpResponse = { native, client, depth ->
+        client.get(LANGUAGES_URL(native)) {
             contentType(ContentType.Application.Json)
-            bearerAuth(token)
             setBody(depth)
         }
     }

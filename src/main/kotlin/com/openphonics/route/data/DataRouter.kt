@@ -24,6 +24,8 @@ import io.ktor.util.*
 
 @OptIn(KtorExperimentalAPI::class)
 fun Route.DataApi(dataController: Lazy<DataController> = controllers.dataController()) {
+    getAllLanguages(dataController)
+    getAllFlags(dataController)
     authenticate {
         languageOperations(dataController)
         unitOperations(dataController)
@@ -47,14 +49,11 @@ private fun Route.postLanguage(controller: Lazy<DataController>){
     }
 }
 private fun Route.getAllLanguages(controller: Lazy<DataController>){
-    get <Data.Language>{
-        // Gets all the progress information for each language the user is learning
-        val principal = call.principal<UserPrincipal>()
-            ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
+    get<Data.Language.All.Native>{language->
         val depth = runCatching { call.receive<DepthRequest>() }.getOrElse {
             DepthRequest(Language.LANGUAGE)
         }
-        val languageResponse = controller.get().getAllLanguages(principal.user.native, depth)
+        val languageResponse = controller.get().getAllLanguages(language.native, depth)
         val response = generateHttpResponse(languageResponse)
         call.respond(response.code, languageResponse)
     }
@@ -70,6 +69,19 @@ private fun Route.getLanguageById(controller: Lazy<DataController>){
         call.respond(response.code, languageResponse)
     }
 }
+//private fun Route.getCurrentLanguage(controller: Lazy<DataController>){
+//    get<Data.Language.Current> {language->
+//        // Gets all the progress information for each language the user is learning
+//        val principal = call.principal<UserPrincipal>()
+//            ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
+//        val depth = runCatching { call.receive<DepthRequest>() }.getOrElse {
+//            DepthRequest(Language.LANGUAGE)
+//        }
+//        val languageResponse = controller.get().getCurrentLanguage(principal.user.currentLanguage, depth)
+//        val response = generateHttpResponse(languageResponse)
+//        call.respond(response.code, languageResponse)
+//    }
+//}
 private fun Route.updateLanguageById(controller: Lazy<DataController>){
     put<Data.Language.Id>{language ->
         val principal = call.principal<UserPrincipal>()
@@ -92,7 +104,7 @@ private fun Route.deleteLanguageById(controller: Lazy<DataController>){
     }
 }
 private fun Route.languageOperations(controller: Lazy<DataController>){
-    getAllLanguages(controller)
+
     postLanguage(controller)
     getLanguageById(controller)
     updateLanguageById(controller)
@@ -402,7 +414,6 @@ private fun Route.deleteFlagById(controller: Lazy<DataController>){
 private fun Route.flagOperations(controller: Lazy<DataController>){
     postFlag(controller)
     getFlagById(controller)
-    getAllFlags(controller)
     deleteFlagById(controller)
     updateFlagById(controller)
 }

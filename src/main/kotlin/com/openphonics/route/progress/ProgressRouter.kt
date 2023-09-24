@@ -25,6 +25,7 @@ import io.ktor.util.*
 fun Route.ProgressApi(progressController: Lazy<ProgressController> = controllers.progressController()) {
     authenticate {
         getAllProgress(progressController)
+        getCurrentProgress(progressController)
         getProgressById(progressController)
         postProgress(progressController)
         updateProgress(progressController)
@@ -54,6 +55,18 @@ private fun Route.getProgressById(controller: Lazy<ProgressController>){
             DepthRequest(Language.LANGUAGE)
         }
         val languageProgressResponse = controller.get().getLanguageProgress(principal.user, language.id, depth)
+        val response = generateHttpResponse(languageProgressResponse)
+        call.respond(response.code, languageProgressResponse)
+    }
+}
+private fun Route.getCurrentProgress(controller: Lazy<ProgressController>){
+    get<Progress.LanguageProgress.Current> {language ->
+        val principal = call.principal<UserPrincipal>()
+            ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
+        val depth = runCatching { call.receive<DepthRequest>() }.getOrElse {
+            DepthRequest(Language.LANGUAGE)
+        }
+        val languageProgressResponse = controller.get().getCurrentLanguageProgress(principal.user, depth)
         val response = generateHttpResponse(languageProgressResponse)
         call.respond(response.code, languageProgressResponse)
     }
