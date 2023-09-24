@@ -82,6 +82,7 @@ private fun Route.getLanguageById(controller: Lazy<DataController>){
 //        call.respond(response.code, languageResponse)
 //    }
 //}
+
 private fun Route.updateLanguageById(controller: Lazy<DataController>){
     put<Data.Language.Id>{language ->
         val principal = call.principal<UserPrincipal>()
