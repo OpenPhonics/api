@@ -37,7 +37,7 @@ interface JWTController {
  * Simple implementation for providing JWT Authentication mechanism.
  * Use [sign] method to generate token.
  */
-class NotyJWTController @Inject constructor(@SecretKey secret: String) : JWTController {
+class OpenPhonicsJWTController @Inject constructor(@SecretKey secret: String) : JWTController {
     private val algorithm = Algorithm.HMAC256(secret)
     override val verifier: JWTVerifier = JWT
         .require(algorithm)

@@ -9,5 +9,5 @@ import java.util.*
 class EntitySectionProgressLearnedWordCrossRef(id: EntityID<UUID>) : UUIDEntity(id) {
     companion object : UUIDEntityClass<EntitySectionProgressLearnedWordCrossRef>(SectionProgressLearnedWordCrossRefs)
     var learnedWord by SectionProgressLearnedWordCrossRefs.learnedWord
-    var section by SectionProgressLearnedWordCrossRefs.section
+    var sectionProgress by SectionProgressLearnedWordCrossRefs.sectionProgress
 }

@@ -4,6 +4,7 @@ import com.openphonics.data.database.table.progress.LanguagesProgress
 import com.openphonics.data.database.table.progress.SectionsProgress
 import com.openphonics.data.database.table.progress.UnitsProgress
 import com.openphonics.data.database.table.references.SectionProgressLearnedWordCrossRefs
+import com.openphonics.data.database.table.references.SectionWordCrossRefs
 import com.openphonics.data.database.table.user.Users
 import com.openphonics.data.entity.data.EntityLanguage
 import com.openphonics.data.entity.data.EntityWord
@@ -11,11 +12,12 @@ import com.openphonics.data.entity.progress.EntityLanguageProgress
 import com.openphonics.data.entity.progress.EntitySectionProgress
 import com.openphonics.data.entity.progress.EntityUnitProgress
 import com.openphonics.data.entity.references.EntitySectionProgressLearnedWordCrossRef
+import com.openphonics.data.entity.references.EntitySectionWordCrossRef
 import com.openphonics.data.entity.user.EntityUser
 import com.openphonics.data.model.progress.LanguageProgress
+import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.joda.time.DateTime
 import java.util.*
@@ -88,121 +90,53 @@ interface SectionProgressDao {
 @Singleton
 class ProgressDaoImpl @Inject constructor(
 ) : ProgressDao {
-    override fun getLanguageProgress(languageProgressId: String, depth: Int): LanguageProgress? = transaction {
-        EntityLanguageProgress.findById(UUID.fromString(languageProgressId))?.let {
-            LanguageProgress.fromEntity(it, depth)
-        }
-    }
-    override fun languageProgressExists(languageId: Int, userId: String): Boolean = transaction {
-        EntityLanguageProgress.find {
-            (LanguagesProgress.language eq languageId) and (LanguagesProgress.user eq UUID.fromString(userId))
-        }.firstOrNull() != null
-    }
     override fun addLanguageProgress(userId: String, languageId: Int): String = transaction {
         val language = EntityLanguage[languageId]
         val user = EntityUser[UUID.fromString(userId)]
-        val languageProgress = EntityLanguageProgress.new {
-            this.language = language
-            this.user = user
-        }
+        val languageProgress = LanguageProgressOp.create(user.id.value, language.id.value)
         val unitsProgress = language.units.map {
-            EntityUnitProgress.new {
-                this.language = languageProgress
-                this.unit = it
-            }
+            UnitProgressOp.create(languageProgress.id.value, it.id.value)
         }.associateBy { it.unit }
-
         unitsProgress.map { (unit, unitProgress) ->
             unit.sections.map { section ->
-                EntitySectionProgress.new {
-                    this.unit = unitProgress
-                    this.section = section
-                }
+                SectionProgressOp.create(unitProgress.id.value, section.id.value)
             }
         }
         return@transaction languageProgress.id.value.toString()
 
     }
-    override fun getLanguageProgressByUser(userId: String, depth: Int): List<LanguageProgress> = transaction {
-        EntityLanguageProgress
-            .find {
-                LanguagesProgress.user eq UUID.fromString(userId)
-            }.sortedWith(compareBy { it.started })
-            .reversed()
-            .map { LanguageProgress.fromEntity(it, depth) }
-    }
-    override fun updateLanguageProgress(languageId: String, xp: Int): String = transaction {
-        EntityLanguageProgress[UUID.fromString(languageId)].apply {
-            this.xp = xp
-        }.id.value.toString()
-    }
-
-    override fun deleteLanguageProgress(languageProgressId: String): Boolean = transaction {
-        val eLanguageProgress = EntityLanguageProgress.findById(UUID.fromString(languageProgressId))
-
-        eLanguageProgress?.let {
-//            eLanguageProgress.units.map { unit ->
-//                unit.sections.map { section ->
-//                    EntitySectionProgressLearnedWordCrossRef.find {
-//                        (SectionProgressLearnedWordCrossRefs.section eq section.id)
-//                    }.forEach { ref ->
-//                        ref.run {
-//                            delete()
-//                        }
-//                    }
-//                    section.run {
-//                        delete()
-//                    }
-//                }
-//                unit.run {
-//                    delete()
-//                }
-//            }
-
-            EntityUser[it.user.id].apply {
-                this.currentLanguage = null
-            }
-            it.run {
-                delete()
-            }
-            return@transaction true
-        }
-        return@transaction false
-    }
-
+    override fun getLanguageProgress(languageProgressId: String, depth: Int): LanguageProgress? = LanguageProgressOp.get(UUID.fromString(languageProgressId))?.let {LanguageProgress.fromEntity(it, depth)}
+    override fun languageProgressExists(languageId: Int, userId: String): Boolean = LanguageProgressOp.get(languageId, UUID.fromString(userId)) != null
+    override fun getLanguageProgressByUser(userId: String, depth: Int): List<LanguageProgress> = LanguageProgressOp.all(UUID.fromString(userId))
+           .sortedWith(compareBy { it.started })
+           .reversed()
+           .map { LanguageProgress.fromEntity(it, depth) }
+    override fun updateLanguageProgress(languageId: String, xp: Int): String = LanguageProgressOp.update(UUID.fromString(languageId), xp = xp).id.value.toString()
     override fun updateStreak(languageId: String, streakContinued: Boolean): String = transaction {
-        EntityLanguageProgress[UUID.fromString(languageId)].apply {
-            this.streak = if (streakContinued) this.streak + 1 else 0
-            this.updated = DateTime.now()
-        }.id.value.toString()
+        val progress = EntityLanguageProgress[UUID.fromString(languageId)]
+        return@transaction LanguageProgressOp.update(
+            progress.id.value,
+            streak = if (streakContinued) progress.streak + 1 else 0,
+            updated = DateTime.now()).id.value.toString()
     }
-
     override fun updateUnitProgress(unitId: String): String {
         TODO("Not yet implemented")
     }
-
     override fun updateSectionProgress(
         sectionProgressId: String,
         currentLesson: Int,
         isLegendary: Boolean,
         learnedWordIds: List<Int>
-    ): String {
-        learnedWordIds.forEach { wordId ->
-            addLearnedWord(wordId, sectionProgressId)
+    ): String = transaction{
+        val progress = EntitySectionProgress[UUID.fromString(sectionProgressId)]
+        learnedWordIds.forEach {wordId ->
+            val crossRef = SectionWordCrossRefOp.get(wordId, progress.section.id.value)!!
+            SectionProgressLearnedWordsCrossRefOp.add(UUID.fromString(sectionProgressId), crossRef.id.value)
         }
-        return EntitySectionProgress[UUID.fromString(sectionProgressId)].apply {
-            this.currentLesson = currentLesson
-            this.isLegendary = isLegendary
-        }.id.value.toString()
+        SectionProgressOp.update(progress.id.value, currentLesson = currentLesson, isLegendary = isLegendary)
+        return@transaction sectionProgressId
     }
-
-    private fun addLearnedWord(wordId: Int, sectionProgressId: String) {
-        EntitySectionProgressLearnedWordCrossRef.new {
-            this.section = EntitySectionProgress[UUID.fromString(sectionProgressId)].id
-            this.learnedWord = EntityWord[wordId].id
-        }
-    }
-
+    override fun deleteLanguageProgress(languageProgressId: String): Boolean = LanguageProgressOp.delete(UUID.fromString(languageProgressId))
     override fun exists(id: String, type: Any): Boolean = transaction {
         when (type) {
             EntityLanguageProgress -> EntityLanguageProgress
@@ -212,7 +146,6 @@ class ProgressDaoImpl @Inject constructor(
             else -> return@transaction false
         }.findById(UUID.fromString(id)) != null
     }
-
     override fun isOwnedByUser(progressId: String, userId: String, type: Any): Boolean = transaction {
         when (type) {
             EntityLanguageProgress -> EntityLanguageProgress[UUID.fromString(progressId)].user.id.value.toString() == userId

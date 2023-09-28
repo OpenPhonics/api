@@ -52,23 +52,23 @@ class AuthController @Inject constructor(
     private val encryptor: Encryptor,
 ) {
     fun registerUser(user: UserSignUpRequest): AuthResponse {
-        val name = user.name
-        val classCode = user.classCode
-        val native = user.native
-        val language = user.language
+        val (name, classCode, native, language) = user
+        val encryptedCode = encryptor.encrypt(classCode)
         return try {
-            val encryptedCode = encryptor.encrypt(classCode)
             validateCredentialsOrThrowException(name, classCode)
             validateNativeOrThrowException(native)
             validateLanguageExists(language)
+
             if (!userDao.isNameAvailable(name, encryptor.encrypt(classCode))) {
                 throw BadRequestException("name is not available")
             }
             if (!userDao.doesClassCodeExists(encryptedCode) || encryptedCode == adminKey) {
                 throw BadRequestException("Invalid class code")
             }
+
             val userResponse = userDao.addUser(name, encryptedCode, native, language)
             AuthResponse.success(jwt.sign(userResponse.id), encryptedCode)
+
         } catch (bre: BadRequestException) {
             AuthResponse.failed(bre.message)
         } catch (nfe: NotFoundException) {
@@ -76,43 +76,31 @@ class AuthController @Inject constructor(
         }
     }
     fun registerAdmin(admin: AdminSignUpRequest): AuthResponse {
+        val (name, classCode) = admin
+        val native = AdminSignUpRequest.ADMIN_NATIVE
+        val encryptedCode = encryptor.encrypt(classCode)
         return try {
-            val name = admin.name
-            val classCode = admin.classCode
-            val native = AdminSignUpRequest.ADMIN_NATIVE
-            val encryptedCode = encryptor.encrypt(classCode)
             validateCredentialsOrThrowException(name, classCode)
             validateNativeOrThrowException(native)
+
             if (!userDao.isNameAvailable(name, encryptor.encrypt(classCode))) {
                 throw BadRequestException("name is not available")
             }
+            //Admin can only be in the admin class
             if (encryptedCode != adminKey) {
                 throw BadRequestException("Invalid class code")
-            } else if (!userDao.doesClassCodeExists(encryptedCode)){
+            }
+            //Creates admin classroom if it doesn't already exist
+            if (!userDao.doesClassCodeExists(encryptedCode)){
                 userDao.addClass(encryptedCode, "Admins")
             }
+
             val user = userDao.addAdmin(name, encryptedCode, native)
             AuthResponse.success(jwt.sign(user.id), encryptedCode)
         } catch (bre: BadRequestException) {
             AuthResponse.failed(bre.message)
         } catch (nfe: NotFoundException) {
             AuthResponse.failed(nfe.message)
-        }
-    }
-    fun deleteUserFromAdmin(admin: User, userId: String): StrIdResponse {
-        return try {
-            if (!admin.isAdmin)
-                throw UnauthorizedActivityException("Must be admin to delete other users")
-            if (!userDao.exists(UUID.fromString(userId))){
-                throw NotFoundException("User does not exist")
-            }
-            if (userDao.deleteByID(userId)) {
-                StrIdResponse.success(userId)
-            } else {
-                StrIdResponse.failed("Error Occurred")
-            }
-        } catch (nfe: NotFoundException) {
-            StrIdResponse.failed(nfe.message)
         }
     }
     fun delete(user: User): StrIdResponse {
@@ -130,8 +118,7 @@ class AuthController @Inject constructor(
         }
     }
     fun login(login: LoginRequest): AuthResponse {
-        val name = login.name
-        val classCode = login.classCode
+        val (name, classCode) = login
         return try {
             validateCredentialsOrThrowException(name, classCode)
             val user = userDao.findByNameAndClassCode(name, encryptor.encrypt(classCode))
@@ -145,12 +132,13 @@ class AuthController @Inject constructor(
     }
 
     fun getClassroom(user: User, classCode: String): ClassroomResponse {
+        val encryptedCode = encryptor.encrypt(classCode)
         return try {
-            val encryptedCode = encryptor.encrypt(classCode)
             if (!userDao.doesClassCodeExists(encryptedCode)) {
                 throw BadRequestException("Class code doesn't exist")
             }
             val classroom = userDao.getClass(encryptedCode)
+            //Adds classCode in response
             ClassroomResponse.success(Classroom.create(classCode, classroom))
         } catch (bre: BadRequestException) {
             ClassroomResponse.failed(bre.message)
@@ -159,11 +147,11 @@ class AuthController @Inject constructor(
         }
     }
     fun addClassroom(user: User, classroom: ClassroomRequest): StrIdResponse {
-        val className = classroom.className
-        val classCode = classroom.classCode
+        val (className, classCode) = classroom
+        val encryptedCode = encryptor.encrypt(classCode)
         return try {
-            val encryptedCode = encryptor.encrypt(classCode)
             validateClass(classCode, className)
+
             if (!user.isAdmin){
                 throw UnauthorizedActivityException("User must be admin to add classroom")
             }
@@ -179,9 +167,9 @@ class AuthController @Inject constructor(
         }
     }
     fun updateClassroom(user: User, classCode: String, classroom: UpdateClassroomRequest): StrIdResponse {
+        val className = classroom.className
+        val encryptedCode = encryptor.encrypt(classCode)
         return try {
-            val className = classroom.className
-            val encryptedCode = encryptor.encrypt(classCode)
             validateClass(classCode, className)
             if (!user.isAdmin) {
                 throw UnauthorizedActivityException("User must be admin to update classroom")
@@ -198,10 +186,11 @@ class AuthController @Inject constructor(
             }
         }
     fun deleteClassroom(user: User, classCode: String): StrIdResponse {
+        val encryptedCode = encryptor.encrypt(classCode)
         return try {
-            val encryptedCode = encryptor.encrypt(classCode)
-            if (!user.isAdmin)
+            if (!user.isAdmin){
                 throw UnauthorizedActivityException("Must be admin to delete classroom")
+            }
             if (!userDao.doesClassCodeExists(encryptedCode)){
                 throw NotFoundException("Classroom does not exist")
             }

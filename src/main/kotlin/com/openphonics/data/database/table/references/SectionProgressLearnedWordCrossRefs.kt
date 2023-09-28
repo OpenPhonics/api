@@ -6,9 +6,6 @@ import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.ReferenceOption
 
 object SectionProgressLearnedWordCrossRefs : UUIDTable() {
-    val learnedWord = reference("learned_word", Words, onDelete = ReferenceOption.CASCADE)
-    val section = reference("section", SectionsProgress, onDelete = ReferenceOption.CASCADE)
-    init {
-        uniqueIndex(learnedWord, section)
-    }
+    val sectionProgress = reference("section_progress", SectionsProgress, onDelete = ReferenceOption.CASCADE)
+    val learnedWord = reference("learned_word",SectionWordCrossRefs, onDelete = ReferenceOption.CASCADE)
 }

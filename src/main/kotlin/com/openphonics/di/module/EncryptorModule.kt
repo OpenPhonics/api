@@ -19,12 +19,12 @@ package com.openphonics.di.module
 import dagger.Binds
 import dagger.Module
 import com.openphonics.auth.Encryptor
-import com.openphonics.auth.NotyEncryptor
+import com.openphonics.auth.OpenPhonicsEncryptor
 import javax.inject.Singleton
 
 @Module
 interface EncryptorModule {
     @Singleton
     @Binds
-    abstract fun encryptor(encryptor: NotyEncryptor): Encryptor
+    abstract fun encryptor(encryptor: OpenPhonicsEncryptor): Encryptor
 }

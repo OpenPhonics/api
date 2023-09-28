@@ -49,12 +49,16 @@ fun Route.AuthApi(authController: Lazy<AuthController> = controllers.authControl
         createClass(authController)
         updateClass(authController)
         deleteClassroom(authController)
-        deleteUserFromAdmin(authController)
 
         deleteUser(authController)
     }
 
 }
+
+/**
+ *@param controller Auth Controller for making changes to auth database
+ * creates a classroom using auth/admin/class route
+ */
 @OptIn(KtorExperimentalAPI::class)
 private fun Route.createClass(controller: Lazy<AuthController>){
     post<Auth.Admin.Classroom> {
@@ -68,6 +72,10 @@ private fun Route.createClass(controller: Lazy<AuthController>){
         call.respond(response.code, classroomResponse)
     }
 }
+/**
+ *@param controller Auth Controller for making changes to auth database
+ * deletes a classroom using auth/admin/class/{classCode} route
+ */
 @OptIn(KtorExperimentalAPI::class)
 private fun Route.deleteClassroom(controller: Lazy<AuthController>){
     delete<Auth.Admin.Classroom.ClassCode> {classCode->
@@ -78,6 +86,10 @@ private fun Route.deleteClassroom(controller: Lazy<AuthController>){
         call.respond(response.code, authResponse)
     }
 }
+/**
+ *@param controller Auth Controller for making changes to auth database
+ * gets a classroom using auth/admin/class route
+ */
 @OptIn(KtorExperimentalAPI::class)
 private fun Route.getClassroom(controller: Lazy<AuthController>){
     get<Auth.Admin.Classroom.ClassCode> {classCode->
@@ -88,16 +100,10 @@ private fun Route.getClassroom(controller: Lazy<AuthController>){
         call.respond(response.code, authResponse)
     }
 }
-@OptIn(KtorExperimentalAPI::class)
-private fun Route.deleteUserFromAdmin(controller: Lazy<AuthController>){
-    delete<Auth.Admin.User.Id> {user->
-        val principal = call.principal<UserPrincipal>()
-            ?: throw UnauthorizedActivityException(FailureMessages.MESSAGE_ACCESS_DENIED)
-        val authResponse = controller.get().deleteUserFromAdmin(principal.user, user.id)
-        val response = generateHttpResponse(authResponse)
-        call.respond(response.code, authResponse)
-    }
-}
+/**
+ *@param controller Auth Controller for making changes to auth database
+ * updates a classroom using auth/admin/class/{classCode} route
+ */
 @OptIn(KtorExperimentalAPI::class)
 private fun Route.updateClass(controller: Lazy<AuthController>){
     put<Auth.Admin.Classroom.ClassCode> {classCode ->
@@ -111,7 +117,10 @@ private fun Route.updateClass(controller: Lazy<AuthController>){
         call.respond(response.code, classroomResponse)
     }
 }
-
+/**
+ *@param controller Auth Controller for making changes to auth database
+ * creates a user using auth/register route
+ */
 @OptIn(KtorExperimentalAPI::class)
 private fun Route.registerUser(controller: Lazy<AuthController>){
     post<Auth.Register> {
@@ -123,6 +132,10 @@ private fun Route.registerUser(controller: Lazy<AuthController>){
         call.respond(response.code, authResponse)
     }
 }
+/**
+ *@param controller Auth Controller for making changes to auth database
+ * deletes a user using auth route
+ */
 @OptIn(KtorExperimentalAPI::class)
 private fun Route.deleteUser(controller: Lazy<AuthController>){
     delete<Auth> {
@@ -133,6 +146,10 @@ private fun Route.deleteUser(controller: Lazy<AuthController>){
         call.respond(response.code, authResponse)
     }
 }
+/**
+ *@param controller Auth Controller for making changes to auth database
+ * creates admin user using auth/register/admin route
+ */
 @OptIn(KtorExperimentalAPI::class)
 private fun Route.registerAdmin(controller: Lazy<AuthController>){
     post<Auth.Register.Admin> {
@@ -144,6 +161,10 @@ private fun Route.registerAdmin(controller: Lazy<AuthController>){
         call.respond(response.code, authResponse)
     }
 }
+/**
+ *@param controller Auth Controller for making changes to auth database
+ * login using auth/login route
+ */
 @OptIn(KtorExperimentalAPI::class)
 private fun Route.login(controller: Lazy<AuthController>){
     post<Auth.Login> {

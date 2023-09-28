@@ -29,7 +29,7 @@ interface Encryptor {
     fun encrypt(data: String): String
 }
 
-class NotyEncryptor @Inject constructor(@SecretKey secret: String) : Encryptor {
+class OpenPhonicsEncryptor @Inject constructor(@SecretKey secret: String) : Encryptor {
 
     private val hmacKey: SecretKeySpec = SecretKeySpec(secret.toByteArray(), ALGORITHM)
 

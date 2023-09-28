@@ -23,6 +23,7 @@ import javax.inject.Singleton
 
 @Module
 interface DaoModule {
+
     @Singleton
     @Binds
     fun userDao(dao: UserDaoImpl): UserDao

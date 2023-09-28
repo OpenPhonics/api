@@ -31,5 +31,4 @@ interface DaoComponent {
     fun dataDao(): Lazy<DataDao>
     fun progressDao(): Lazy<ProgressDao>
 
-
 }

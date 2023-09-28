@@ -19,12 +19,12 @@ package com.openphonics.di.module
 import dagger.Binds
 import dagger.Module
 import com.openphonics.auth.JWTController
-import com.openphonics.auth.NotyJWTController
+import com.openphonics.auth.OpenPhonicsJWTController
 import javax.inject.Singleton
 
 @Module
 interface ControllerModule {
     @Singleton
     @Binds
-    fun jwtController(controller: NotyJWTController): JWTController
+    fun jwtController(controller: OpenPhonicsJWTController): JWTController
 }
