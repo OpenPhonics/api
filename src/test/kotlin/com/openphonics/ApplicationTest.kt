@@ -1,21 +1,46 @@
 package com.openphonics
 
-import com.openphonics.plugins.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
+import io.kotest.core.spec.style.AnnotationSpec
+import io.ktor.server.config.*
 import io.ktor.server.testing.*
-import kotlin.test.*
+import io.ktor.util.*
+import org.testcontainers.containers.PostgreSQLContainer
+import java.util.*
 
-class ApplicationTest {
-    @Test
-    fun testRoot() = testApplication {
-        application {
-            configureRouting()
-        }
-        client.get("/").apply {
-            assertEquals(HttpStatusCode.OK, status)
-            assertEquals("Hello World!", bodyAsText())
-        }
+@Suppress("unused")
+@KtorExperimentalAPI
+class ApplicationTest : AnnotationSpec() {
+
+    private val sqlContainer = DatabaseContainer()
+
+    @BeforeClass
+    fun setup() {
+        sqlContainer.start()
     }
+    fun testApp(test: TestApplicationEngine.() -> Unit) {
+        withTestApplication(
+            {
+                (environment.config as MapApplicationConfig).apply {
+                    // Set here the properties
+                    put("key.secret", UUID.randomUUID().toString())
+                    put("db.host", sqlContainer.host)
+                    put("db.port", sqlContainer.firstMappedPort.toString())
+                    put("db.name", sqlContainer.databaseName)
+                    put("db.user", sqlContainer.username)
+                    put("db.max_pool_size", "3")
+                    put("db.driver", sqlContainer.driverClassName)
+                    put("db.password", sqlContainer.password)
+                }
+                module()
+            },
+            test
+        )
+    }
+
+    @AfterClass
+    fun cleanup() {
+        sqlContainer.stop()
+    }
+    inner class DatabaseContainer : PostgreSQLContainer<DatabaseContainer>()
+
 }
