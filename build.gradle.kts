@@ -35,6 +35,7 @@ dependencies {
     implementation("io.ktor:ktor-server-host-common-jvm")
     implementation("io.ktor:ktor-server-status-pages-jvm")
     implementation("io.ktor:ktor-server-content-negotiation-jvm")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
     implementation("io.ktor:ktor-serialization-kotlinx-json-jvm")
     implementation("org.jetbrains.exposed:exposed-core:$exposed_version")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposed_version")
@@ -57,14 +58,13 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposed_version")
     implementation("org.jetbrains.exposed:exposed-jodatime:$exposed_version")
 
-    // Testing
+    //Tests
+    testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlin_version")
     testImplementation("io.ktor:ktor-server-tests:$ktor_version")
     testImplementation("org.testcontainers:testcontainers:$test_container_version")
     testImplementation("org.testcontainers:postgresql:$test_container_version")
-    // Testing
-    testImplementation("io.kotest:kotest-runner-junit5-jvm:$kotest_version")
-    testImplementation("io.kotest:kotest-assertions-core-jvm:$kotest_version")
-    testImplementation("io.kotest:kotest-property-jvm:$kotest_version")
+
     // Dagger
     implementation("com.google.dagger:dagger:$dagger_version")
     kapt("com.google.dagger:dagger-compiler:$dagger_version")
