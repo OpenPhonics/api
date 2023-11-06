@@ -1,6 +1,8 @@
 package com.openphonics.data.language
 
 import com.openphonics.data.flag.FlagEntity
+import com.openphonics.data.word.WordEntity
+import com.openphonics.data.word.Words
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -11,4 +13,5 @@ class LanguageEntity(id: EntityID<Int>) : IntEntity(id) {
     var languageId by Languages.languageId
     var languageName by Languages.languageName
     var flag by FlagEntity referencedOn Languages.flag
+    val words by WordEntity referrersOn Words.language
 }

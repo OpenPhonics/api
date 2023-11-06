@@ -7,8 +7,10 @@ val exposed_version: String by project
 val h2_version: String by project
 val test_container_version: String by project
 val kotest_version: String by project
+val dagger_version: String by project
 plugins {
     kotlin("jvm") version "1.9.20"
+    kotlin("kapt") version "1.9.20"
     id("io.ktor.plugin") version "2.3.5"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.20"
 }
@@ -63,4 +65,8 @@ dependencies {
     testImplementation("io.kotest:kotest-runner-junit5-jvm:$kotest_version")
     testImplementation("io.kotest:kotest-assertions-core-jvm:$kotest_version")
     testImplementation("io.kotest:kotest-property-jvm:$kotest_version")
+    // Dagger
+    implementation("com.google.dagger:dagger:$dagger_version")
+    kapt("com.google.dagger:dagger-compiler:$dagger_version")
 }
+
