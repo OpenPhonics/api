@@ -1,5 +1,6 @@
 package com.openphonics
 
+import com.openphonics.application.route.Flag
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -7,14 +8,17 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.config.*
+import io.ktor.server.resources.*
+import io.ktor.server.routing.*
+import io.ktor.server.routing.get
 import io.ktor.server.testing.*
-import io.ktor.util.*
 import kotlinx.serialization.json.Json
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 import kotlin.test.assertEquals
+import kotlin.text.get
 
 class ApplicationTest {
     companion object {
