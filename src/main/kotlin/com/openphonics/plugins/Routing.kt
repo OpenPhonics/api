@@ -1,5 +1,8 @@
 package com.openphonics.plugins
 
+import com.openphonics.application.route.FlagAPI
+import com.openphonics.application.route.LanguageAPI
+import com.openphonics.application.route.WordAPI
 import io.ktor.http.*
 import io.ktor.resources.*
 import io.ktor.server.application.*
@@ -12,5 +15,9 @@ import kotlinx.serialization.Serializable
 
 fun Application.configureRouting() {
     install(Resources)
-
+    routing {
+        FlagAPI()
+        LanguageAPI()
+        WordAPI()
+    }
 }

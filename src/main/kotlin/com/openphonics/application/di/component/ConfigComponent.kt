@@ -24,7 +24,5 @@ import javax.inject.Singleton
 @Singleton
 @Subcomponent(modules = [ConfigModule::class])
 interface ConfigComponent {
-    @SecretKey
-    fun secretKey(): String
     fun databaseConfig(): DatabaseConfig
 }
