@@ -18,20 +18,17 @@ import kotlin.test.assertEquals
 
 class ApplicationTest {
     companion object {
-        @OptIn(KtorExperimentalAPI::class)
         val test: (suspend (HttpClient) -> Unit) -> Unit = { testing ->
             testApplication {
                 environment {
                     config = MapApplicationConfig(
-                        "key.admin" to "cf6b502cc6d73d9d0b915fad33e249b3c5960ab57225e8179861bf946eb53dee",
-                        "key.secret" to "2gkF75yMsUDcZ0yQxIIak0be2TNUk4o0",
-                        "database.host" to sqlContainer.host,
-                        "database.port" to sqlContainer.firstMappedPort.toString(),
-                        "database.name" to sqlContainer.databaseName,
-                        "database.user" to sqlContainer.username,
-                        "database.maxPoolSize" to "3",
-                        "database.driver" to sqlContainer.driverClassName,
-                        "database.password" to sqlContainer.password
+                        "db.host" to sqlContainer.host,
+                        "db.port" to sqlContainer.firstMappedPort.toString(),
+                        "db.name" to sqlContainer.databaseName,
+                        "db.user" to sqlContainer.username,
+                        "db.max_pool_size" to "3",
+                        "db.driver" to sqlContainer.driverClassName,
+                        "db.password" to sqlContainer.password
                     )
                 }
                 application {
@@ -63,10 +60,6 @@ class ApplicationTest {
             assertEquals(HttpStatusCode.OK, response.status, message ?: response.body())
         }
 
-        suspend fun unauth(response: HttpResponse, message: String? = null) {
-            assertEquals(HttpStatusCode.Unauthorized, response.status, message ?: response.body())
-        }
-
         suspend fun not(response: HttpResponse, message: String? = null) {
             assertEquals(HttpStatusCode.NotFound, response.status, message ?: response.body())
         }
@@ -85,4 +78,5 @@ class ApplicationTest {
             sqlContainer.stop()
         }
     }
+
 }

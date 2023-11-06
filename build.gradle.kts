@@ -8,6 +8,7 @@ val h2_version: String by project
 val test_container_version: String by project
 val kotest_version: String by project
 val dagger_version: String by project
+val hocon_version: String by project
 plugins {
     kotlin("jvm") version "1.9.20"
     kotlin("kapt") version "1.9.10"
@@ -45,6 +46,9 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logback_version")
     testImplementation("io.ktor:ktor-server-tests-jvm")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
+
+    //HOCON
+    implementation("com.typesafe:config:$hocon_version")
 
     // Hikari
     implementation("com.zaxxer:HikariCP:$hikari_version")
