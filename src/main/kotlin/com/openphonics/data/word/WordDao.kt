@@ -21,19 +21,14 @@ interface WordDao {
     fun get(language: Int, word: String): Word?
     fun all(language: Int): List<Word>
     fun delete(id: Int): Boolean
+    fun exists(id: Int): Boolean
+    fun exists(language: Int, word: String): Boolean
 }
 @Singleton
 class WordDaoImpl @Inject constructor(
     private val mapper: OpenPhonicsMapper
 ) : WordDao {
-    override fun create(
-        language: Int,
-        phonic: String,
-        sound: String,
-        translatedWord: String,
-        translatedSound: String,
-        word: String
-    ): Int = transaction {
+    override fun create(language: Int, phonic: String, sound: String, translatedWord: String, translatedSound: String, word: String): Int = transaction {
         WordEntity.new {
             this.phonic = phonic
             this.sound = sound
@@ -43,7 +38,6 @@ class WordDaoImpl @Inject constructor(
             this.language = LanguageEntity[language]
         }.id.value
     }
-
     override fun update(
         id: Int,
         phonic: String?,
@@ -60,23 +54,20 @@ class WordDaoImpl @Inject constructor(
             word?.let { this.word = it }
         }.id.value
     }
-
     override fun get(id: Int): Word? = transaction {
         WordEntity.findById(id)
-    }?.let { mapper.fromEntity(it) }
-
+    }?.let {mapper.fromEntity(it)}
     override fun get(language: Int, word: String): Word? = transaction {
         WordEntity.find {
             ((Words.language eq language) and (Words.word eq word))
         }.firstOrNull()
-    }?.let { mapper.fromEntity(it) }
+    }?.let {mapper.fromEntity(it)}
 
     override fun all(language: Int): List<Word> = transaction {
         WordEntity.find {
             (Words.language eq language)
-        }.map { mapper.fromEntity(it) }
+        }.map {mapper.fromEntity(it)}
     }
-
     override fun delete(id: Int): Boolean = transaction {
         WordEntity.findById(id)?.run {
             delete()
@@ -84,4 +75,6 @@ class WordDaoImpl @Inject constructor(
         }
         return@transaction false
     }
+    override fun exists(id: Int) = get(id) != null
+    override fun exists(language: Int, word: String) = get(language, word) != null
 }

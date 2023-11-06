@@ -9,3 +9,10 @@ data class LanguageRequest(
     val languageName: String,
     val flag: String,
 )
+@Serializable
+data class UpdateLanguageRequest(
+    val nativeId: String? = null,
+    val languageId: String? = null,
+    val languageName: String? = null,
+    val flag: String? = null,
+)

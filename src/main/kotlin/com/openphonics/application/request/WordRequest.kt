@@ -11,3 +11,11 @@ data class WordRequest(
     val word: String,
     val language: Int
 )
+@Serializable
+data class UpdateWordRequest(
+    val phonic: String? = null,
+    val sound: String? = null,
+    val translatedSound: String? = null,
+    val translatedWord: String? = null,
+    val word: String? = null
+)
