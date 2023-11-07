@@ -21,14 +21,15 @@ import com.openphonics.application.controller.LanguageController
 import com.openphonics.application.controller.WordController
 import dagger.Lazy
 import dagger.Subcomponent
-import com.openphonics.application.di.module.ConfigModule
 import com.openphonics.application.di.module.DaoModule
+import com.openphonics.application.di.module.MapperModule
+import com.openphonics.application.di.module.ValidatorModule
 import io.ktor.util.KtorExperimentalAPI
 import javax.inject.Singleton
 
 @KtorExperimentalAPI
 @Singleton
-@Subcomponent(modules = [ConfigModule::class, DaoModule::class])
+@Subcomponent(modules = [DaoModule::class, ValidatorModule::class, MapperModule::class])
 interface ControllerComponent {
     fun flagController(): Lazy<FlagController>
     fun languageController(): Lazy<LanguageController>

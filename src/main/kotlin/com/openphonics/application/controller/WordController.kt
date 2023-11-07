@@ -11,6 +11,7 @@ import com.openphonics.utils.OpenPhonicsRequestValidator
 import javax.inject.Inject
 import javax.inject.Singleton
 
+
 @Singleton
 class WordController @Inject constructor(
     private val wordDao: WordDao,

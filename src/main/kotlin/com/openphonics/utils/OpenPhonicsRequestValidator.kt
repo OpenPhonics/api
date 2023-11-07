@@ -7,28 +7,40 @@ import com.openphonics.data.word.WordDao
 import javax.inject.Inject
 import javax.inject.Singleton
 
+interface OpenPhonicsRequestValidator {
+    fun flagExistsOrThrowException(id: String)
+    fun languageExistsOrThrowException(id: Int)
+    fun wordExistsOrThrowException(id: Int)
+    fun validateOrThrowException(request: FlagRequest)
+    fun validateOrThrowException(id: String, request: UpdateFlagRequest)
+    fun validateOrThrowException(request: LanguageRequest)
+    fun validateOrThrowException(id: Int, request: UpdateLanguageRequest)
+    fun validateOrThrowException(request: WordRequest)
+    fun validateOrThrowException(id: Int, request: UpdateWordRequest)
+
+}
 @Singleton
-class OpenPhonicsRequestValidator @Inject constructor(
+class OpenPhonicsRequestValidatorImpl @Inject constructor(
     private val flagDao: FlagDao,
     private val languageDao: LanguageDao,
     private val wordDao: WordDao,
-    ) {
-    fun flagExistsOrThrowException(id: String){
+    ) : OpenPhonicsRequestValidator {
+    override fun flagExistsOrThrowException(id: String){
         if (!flagDao.exists(id)){
             throw BadRequestException("Flag does not exist")
         }
     }
-    fun languageExistsOrThrowException(id: Int){
+    override fun languageExistsOrThrowException(id: Int){
         if (!languageDao.exists(id)){
             throw BadRequestException("Language does not exist")
         }
     }
-    fun wordExistsOrThrowException(id: Int){
+    override fun wordExistsOrThrowException(id: Int){
         if (!wordDao.exists(id)){
             throw BadRequestException("Word does not exist")
         }
     }
-    fun validateOrThrowException(request: FlagRequest){
+    override fun validateOrThrowException(request: FlagRequest){
         with(request){
             val message = when {
                 id.length != 2 -> "Id must be 2 characters"
@@ -39,10 +51,10 @@ class OpenPhonicsRequestValidator @Inject constructor(
             throw BadRequestException(message)
         }
     }
-    fun validateOrThrowException(id: String, request: UpdateFlagRequest){
+    override fun validateOrThrowException(id: String, request: UpdateFlagRequest){
         flagExistsOrThrowException(id)
     }
-    fun validateOrThrowException(request: LanguageRequest){
+    override fun validateOrThrowException(request: LanguageRequest){
         with(request){
             val message = when {
                 nativeId.length != 2 -> "Native language id must be 2 characters"
@@ -59,7 +71,7 @@ class OpenPhonicsRequestValidator @Inject constructor(
             throw BadRequestException(message)
         }
     }
-    fun validateOrThrowException(id: Int, request: UpdateLanguageRequest){
+    override fun validateOrThrowException(id: Int, request: UpdateLanguageRequest){
         languageExistsOrThrowException(id)
         val languageData = languageDao.get(id)!!
         with(request){
@@ -79,7 +91,7 @@ class OpenPhonicsRequestValidator @Inject constructor(
             throw BadRequestException(message)
         }
     }
-    fun validateOrThrowException(request: WordRequest){
+    override fun validateOrThrowException(request: WordRequest){
         with(request){
             val message = when {
                 !phonic.containsOnlyLetters() -> "phonic cannot contain numbers"
@@ -94,7 +106,7 @@ class OpenPhonicsRequestValidator @Inject constructor(
             throw BadRequestException(message)
         }
     }
-    fun validateOrThrowException(id: Int, request: UpdateWordRequest){
+    override fun validateOrThrowException(id: Int, request: UpdateWordRequest){
         with(request){
             val wordData = wordDao.get(id)!!
             val message = when {

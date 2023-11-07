@@ -25,10 +25,9 @@ import io.ktor.util.KtorExperimentalAPI
 @Component
 interface AppComponent {
     fun application(): Application
-
     fun controllerComponent(): ControllerComponent
-    fun configComponent(): ConfigComponent
-    fun daoComponent(): DaoComponent
+//    fun daoComponent(): DaoComponent
+//    fun validatorComponent(): ValidatorComponent
 
     @Component.Builder
     interface Builder {
