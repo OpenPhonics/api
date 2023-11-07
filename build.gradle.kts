@@ -13,7 +13,8 @@ plugins {
     kotlin("jvm") version "1.9.20"
     kotlin("kapt") version "1.9.10"
     id("io.ktor.plugin") version "2.3.5"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.20"
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.10"
+
 }
 
 group = "com.openphonics"

@@ -1,6 +1,9 @@
 package com.openphonics.plugins
 
 import com.openphonics.data.DatabaseConfig
+import com.openphonics.data.flag.Flags
+import com.openphonics.data.language.Languages
+import com.openphonics.data.word.Words
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.http.*
@@ -9,6 +12,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.transactions.transaction
 import javax.sql.DataSource
 
 fun Application.configureDatabase() {
@@ -25,7 +29,16 @@ fun Application.configureDatabase() {
     )
 }
 private fun initDatabase(databaseConfig: DatabaseConfig) {
+    val tables = arrayOf(
+        Flags,
+        Languages,
+        Words,
+        )
+
     Database.connect(createDataSource(databaseConfig))
+    transaction {
+        SchemaUtils.createMissingTablesAndColumns(*tables)
+    }
 }
 private fun createDataSource(databaseConfig: DatabaseConfig): DataSource {
     val config = HikariConfig()

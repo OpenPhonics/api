@@ -4,8 +4,8 @@ import com.openphonics.application.controller.FlagController
 import com.openphonics.application.exception.FailureMessages
 import com.openphonics.application.request.FlagRequest
 import com.openphonics.application.request.UpdateFlagRequest
-import com.openphonics.application.response.generateHttpResponse
 import com.openphonics.plugins.controllers
+import com.openphonics.utils.generateHttpCode
 import dagger.Lazy
 import io.ktor.resources.*
 import io.ktor.server.application.*
@@ -36,7 +36,7 @@ fun Route.FlagAPI(flagController: Lazy<FlagController> = controllers.flagControl
 private fun Route.all(controller: Lazy<FlagController>) {
     get<Flag> {
         val response = controller.get().all()
-        call.respond(generateHttpResponse(response))
+        call.respond(generateHttpCode(response), response)
     }
 }
 private fun Route.put(controller: Lazy<FlagController>) {
@@ -45,19 +45,19 @@ private fun Route.put(controller: Lazy<FlagController>) {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_FLAG_DETAILS)
         }
         val response = controller.get().create(request)
-        call.respond(generateHttpResponse(response))
+        call.respond(generateHttpCode(response), response)
     }
 }
 private fun Route.get(controller: Lazy<FlagController>) {
     get<Flag.Id> {param ->
         val response = controller.get().get(param.id)
-        call.respond(generateHttpResponse(response))
+        call.respond(generateHttpCode(response), response)
     }
 }
 private fun Route.delete(controller: Lazy<FlagController>) {
     delete<Flag.Id> {param ->
         val response = controller.get().delete(param.id)
-        call.respond(generateHttpResponse(response))
+        call.respond(generateHttpCode(response), response)
     }
 }
 private fun Route.post(controller: Lazy<FlagController>) {
@@ -66,7 +66,7 @@ private fun Route.post(controller: Lazy<FlagController>) {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_UPDATE_FLAG_DETAILS)
         }
         val response = controller.get().update(param.id, request)
-        call.respond(generateHttpResponse(response))
+        call.respond(generateHttpCode(response), response)
     }
 }
 

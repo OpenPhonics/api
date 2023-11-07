@@ -4,8 +4,8 @@ import com.openphonics.application.controller.LanguageController
 import com.openphonics.application.exception.FailureMessages
 import com.openphonics.application.request.LanguageRequest
 import com.openphonics.application.request.UpdateLanguageRequest
-import com.openphonics.application.response.generateHttpResponse
 import com.openphonics.plugins.controllers
+import com.openphonics.utils.generateHttpCode
 import dagger.Lazy
 import io.ktor.resources.*
 import io.ktor.server.application.*
@@ -37,7 +37,7 @@ fun Route.LanguageAPI(languageController: Lazy<LanguageController> = controllers
 private fun Route.all(controller: Lazy<LanguageController>) {
     get<Language.All> {param->
         val response = controller.get().all(param.native)
-        call.respond(generateHttpResponse(response))
+        call.respond(generateHttpCode(response), response)
     }
 }
 private fun Route.put(controller: Lazy<LanguageController>) {
@@ -46,19 +46,19 @@ private fun Route.put(controller: Lazy<LanguageController>) {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_LANGUAGE_DETAILS)
         }
         val response = controller.get().create(request)
-        call.respond(generateHttpResponse(response))
+        call.respond(generateHttpCode(response), response)
     }
 }
 private fun Route.get(controller: Lazy<LanguageController>) {
     get<Language.Id> {param ->
         val response = controller.get().get(param.id)
-        call.respond(generateHttpResponse(response))
+        call.respond(generateHttpCode(response), response)
     }
 }
 private fun Route.delete(controller: Lazy<LanguageController>) {
     delete<Language.Id> {param ->
         val response = controller.get().delete(param.id)
-        call.respond(generateHttpResponse(response))
+        call.respond(generateHttpCode(response), response)
     }
 }
 private fun Route.post(controller: Lazy<LanguageController>) {
@@ -67,6 +67,6 @@ private fun Route.post(controller: Lazy<LanguageController>) {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_LANGUAGE_DETAILS)
         }
         val response = controller.get().update(param.id, request)
-        call.respond(generateHttpResponse(response))
+        call.respond(generateHttpCode(response), response)
     }
 }
