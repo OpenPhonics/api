@@ -23,7 +23,7 @@ class FlagDaoImpl @Inject constructor(
         }.id.value
     }
     override fun all(): List<Flag> = transaction {
-        FlagEntity.all().map {mapper.fromEntity(it)}
+        FlagEntity.all().sortedBy { it.id}.map {mapper.fromEntity(it)}
     }
     override fun update(id: String, newFlag: String): String = transaction {
         FlagEntity[id].apply {

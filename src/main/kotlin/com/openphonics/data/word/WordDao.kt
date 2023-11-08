@@ -66,7 +66,7 @@ class WordDaoImpl @Inject constructor(
     override fun all(language: Int): List<Word> = transaction {
         WordEntity.find {
             (Words.language eq language)
-        }.map {mapper.fromEntity(it)}
+        }.sortedBy { it.word}.map {mapper.fromEntity(it)}
     }
     override fun delete(id: Int): Boolean = transaction {
         WordEntity.findById(id)?.run {

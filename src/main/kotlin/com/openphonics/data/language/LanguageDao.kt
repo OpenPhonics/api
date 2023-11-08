@@ -32,7 +32,7 @@ class LanguageDaoImpl @Inject constructor(
     override fun all(nativeId: String): List<Language> = transaction {
         LanguageEntity.find {
             (Languages.nativeId eq nativeId)
-        }.map {mapper.fromEntity(it)}
+        }.sortedBy { it.languageName }.map {mapper.fromEntity(it)}
     }
     override fun update(id: Int, nativeId: String?, languageId: String?, languageName: String?, flag: String?): Int = transaction {
         LanguageEntity[id].apply {
