@@ -24,7 +24,6 @@ class OpenPhonicsMapperImpl @Inject constructor() : OpenPhonicsMapper {
         entity.languageId,
         entity.languageName,
         fromEntity(entity.flag),
-        entity.words.map {fromEntity(it)},
         entity.id.value
     )
     override fun fromEntity(entity: WordEntity) = Word(

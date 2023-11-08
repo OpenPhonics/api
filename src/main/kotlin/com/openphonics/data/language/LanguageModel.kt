@@ -11,6 +11,5 @@ data class Language (
     val languageId: String,
     val languageName: String,
     val flag: Flag,
-    val words: List<Word>,
     val id: Int,
 )

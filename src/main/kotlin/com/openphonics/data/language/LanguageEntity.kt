@@ -13,5 +13,4 @@ class LanguageEntity(id: EntityID<Int>) : IntEntity(id) {
     var languageId by Languages.languageId
     var languageName by Languages.languageName
     var flag by FlagEntity referencedOn Languages.flag
-    val words by WordEntity referrersOn Words.language
 }
