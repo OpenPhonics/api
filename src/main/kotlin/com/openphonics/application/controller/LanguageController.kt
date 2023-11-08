@@ -4,6 +4,7 @@ import com.openphonics.application.exception.BadRequestException
 import com.openphonics.application.exception.NotFoundException
 import com.openphonics.application.request.LanguageRequest
 import com.openphonics.application.request.UpdateLanguageRequest
+import com.openphonics.application.response.FlagResponse
 import com.openphonics.application.response.IntResponse
 import com.openphonics.application.response.LanguageResponse
 import com.openphonics.data.language.LanguageDao
@@ -48,6 +49,8 @@ class LanguageController @Inject constructor(
                 IntResponse.success(responseId)
             } catch (bre: BadRequestException) {
                 IntResponse.failed(bre.message)
+            } catch (nfe: NotFoundException) {
+                IntResponse.notFound(nfe.message)
             }
         }
     }

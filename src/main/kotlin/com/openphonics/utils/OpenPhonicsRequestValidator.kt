@@ -1,5 +1,6 @@
 package com.openphonics.utils
 import com.openphonics.application.exception.BadRequestException
+import com.openphonics.application.exception.NotFoundException
 import com.openphonics.application.request.*
 import com.openphonics.data.flag.FlagDao
 import com.openphonics.data.language.LanguageDao
@@ -27,17 +28,17 @@ class OpenPhonicsRequestValidatorImpl @Inject constructor(
     ) : OpenPhonicsRequestValidator {
     override fun flagExistsOrThrowException(id: String){
         if (!flagDao.exists(id)){
-            throw BadRequestException("Flag does not exist")
+            throw NotFoundException("Flag does not exist")
         }
     }
     override fun languageExistsOrThrowException(id: Int){
         if (!languageDao.exists(id)){
-            throw BadRequestException("Language does not exist")
+            throw NotFoundException("Language does not exist")
         }
     }
     override fun wordExistsOrThrowException(id: Int){
         if (!wordDao.exists(id)){
-            throw BadRequestException("Word does not exist")
+            throw NotFoundException("Word does not exist")
         }
     }
     override fun validateOrThrowException(request: FlagRequest){
@@ -84,7 +85,7 @@ class OpenPhonicsRequestValidatorImpl @Inject constructor(
                 languageId != null &&  !languageId.containsOnlyLetters() -> "Language cannot contain numbers"
                 languageName != null &&  !languageName.containsOnlyLetters() -> "Language name cannot contain numbers"
                 flag != null && !flagDao.exists(flag) -> "Flag does not exist"
-                nativeId == null && languageId == null -> return
+                (nativeId == null || nativeId == languageData.nativeId) && (languageId == null || languageId == languageData.languageId) -> return
                 languageDao.exists(nativeId ?: languageData.nativeId, languageId ?: languageData.languageId) -> "Language already exists"
                 else -> return
             }
@@ -108,6 +109,7 @@ class OpenPhonicsRequestValidatorImpl @Inject constructor(
     }
     override fun validateOrThrowException(id: Int, request: UpdateWordRequest){
         with(request){
+            wordExistsOrThrowException(id)
             val wordData = wordDao.get(id)!!
             val message = when {
                 phonic != null && !phonic.containsOnlyLetters() -> "phonic cannot contain numbers"

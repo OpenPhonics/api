@@ -21,7 +21,10 @@ import io.ktor.util.*
 @Resource(Routes.WORDS)
 class Word(){
     @Resource(Routes.ALL)
-    class All(val parent: Word = Word(), val language: Int)
+    class All(val parent: Word = Word()){
+        @Resource(Routes.LANGUAGE)
+        class Language(val parent: All = All(),  val language: Int)
+    }
     @Resource(Routes.ID)
     class Id(val parent: Word = Word(),  val id: Int)
 }
@@ -35,7 +38,7 @@ fun Route.WordAPI(wordController: Lazy<WordController> = controllers.wordControl
     all(wordController)
 }
 private fun Route.all(controller: Lazy<WordController>) {
-    get<Word.All> {param->
+    get<Word.All.Language> {param->
         val response = controller.get().all(param.language)
         call.respond(generateHttpCode(response), response)
     }

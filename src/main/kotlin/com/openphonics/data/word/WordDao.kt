@@ -55,13 +55,13 @@ class WordDaoImpl @Inject constructor(
         }.id.value
     }
     override fun get(id: Int): Word? = transaction {
-        WordEntity.findById(id)
-    }?.let {mapper.fromEntity(it)}
+        WordEntity.findById(id)?.let {mapper.fromEntity(it)}
+    }
     override fun get(language: Int, word: String): Word? = transaction {
         WordEntity.find {
             ((Words.language eq language) and (Words.word eq word))
-        }.firstOrNull()
-    }?.let {mapper.fromEntity(it)}
+        }.firstOrNull()?.let {mapper.fromEntity(it)}
+    }
 
     override fun all(language: Int): List<Word> = transaction {
         WordEntity.find {

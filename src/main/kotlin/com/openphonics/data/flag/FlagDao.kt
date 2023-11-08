@@ -32,8 +32,8 @@ class FlagDaoImpl @Inject constructor(
     }
 
     override fun get(id: String): Flag? = transaction {
-        FlagEntity.findById(id)
-    }?.let {mapper.fromEntity(it)}
+        FlagEntity.findById(id)?.let {mapper.fromEntity(it)}
+    }
 
     override fun delete(id: String): Boolean = transaction {
         FlagEntity.findById(id)?.run {

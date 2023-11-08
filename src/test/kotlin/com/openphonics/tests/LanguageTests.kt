@@ -7,6 +7,7 @@ import com.openphonics.application.request.LanguageRequest
 import com.openphonics.application.request.UpdateLanguageRequest
 import com.openphonics.application.response.IntResponse
 import com.openphonics.application.response.StrResponse
+import com.openphonics.application.route.Routes
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -89,7 +90,7 @@ object LanguageTests {
     )
     // Define a suspend function for creating a language
     suspend fun create(data: LanguageRequest?, client: HttpClient): HttpResponse {
-        return client.put("/language") {
+        return client.put(Routes.LANGUAGES) {
             contentType(ContentType.Application.Json)
             setBody(data)
         }
@@ -97,14 +98,14 @@ object LanguageTests {
 
     // Define a suspend function for getting a language by ID
     suspend fun get(id: Int, client: HttpClient): HttpResponse {
-        return client.get("/language/$id") {
+        return client.get("${Routes.LANGUAGES}/$id") {
             contentType(ContentType.Application.Json)
         }
     }
 
     // Define a suspend function for updating a language by ID
     suspend fun update(data: UpdateLanguageRequest?, id: Int, client: HttpClient): HttpResponse {
-        return client.post("/language/$id") {
+        return client.post("${Routes.LANGUAGES}/$id") {
             contentType(ContentType.Application.Json)
             setBody(data)
         }
@@ -112,14 +113,14 @@ object LanguageTests {
 
     // Define a suspend function for deleting a language by ID
     suspend fun delete(id: Int, client: HttpClient): HttpResponse {
-        return client.delete("/language/$id") {
+        return client.delete("${Routes.LANGUAGES}/$id") {
             contentType(ContentType.Application.Json)
         }
     }
 
     // Define a suspend function for fetching all languages by native language name
     suspend fun all(native: String, client: HttpClient): HttpResponse {
-        return client.get("/language/$native") {
+        return client.get("${Routes.LANGUAGES}/${Routes.ALL}/$native") {
             contentType(ContentType.Application.Json)
         }
     }

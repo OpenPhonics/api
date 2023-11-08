@@ -7,6 +7,7 @@ import com.openphonics.application.request.WordRequest
 import com.openphonics.application.request.UpdateWordRequest
 import com.openphonics.application.response.IntResponse
 import com.openphonics.application.response.StrResponse
+import com.openphonics.application.route.Routes
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -86,7 +87,7 @@ object WordTests {
 
     // Define a suspend function for creating a word
     suspend fun create(data: WordRequest?, client: HttpClient): HttpResponse {
-        return client.put("/word") {
+        return client.put(Routes.WORDS) {
             contentType(ContentType.Application.Json)
             setBody(data)
         }
@@ -94,14 +95,14 @@ object WordTests {
 
     // Define a suspend function for getting a word by ID
     suspend fun get(id: Int, client: HttpClient): HttpResponse {
-        return client.get("/word/$id") {
+        return client.get("${Routes.WORDS}/$id") {
             contentType(ContentType.Application.Json)
         }
     }
 
     // Define a suspend function for updating a word by ID
     suspend fun update(data: UpdateWordRequest?, id: Int, client: HttpClient): HttpResponse {
-        return client.post("/word/$id") {
+        return client.post("${Routes.WORDS}/$id") {
             contentType(ContentType.Application.Json)
             setBody(data)
         }
@@ -109,14 +110,14 @@ object WordTests {
 
     // Define a suspend function for deleting a word by ID
     suspend fun delete(id: Int, client: HttpClient): HttpResponse {
-        return client.delete("/word/$id") {
+        return client.delete("${Routes.WORDS}/$id") {
             contentType(ContentType.Application.Json)
         }
     }
 
     // Define a suspend function for fetching all words by language
     suspend fun all(language: Int, client: HttpClient): HttpResponse {
-        return client.get("/word/$language") {
+        return client.get("${Routes.WORDS}/${Routes.ALL}/$language") {
             contentType(ContentType.Application.Json)
         }
     }

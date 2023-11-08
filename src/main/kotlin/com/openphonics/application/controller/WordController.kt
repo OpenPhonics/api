@@ -4,6 +4,7 @@ import com.openphonics.application.exception.BadRequestException
 import com.openphonics.application.exception.NotFoundException
 import com.openphonics.application.request.UpdateWordRequest
 import com.openphonics.application.request.WordRequest
+import com.openphonics.application.response.FlagResponse
 import com.openphonics.application.response.IntResponse
 import com.openphonics.application.response.WordResponse
 import com.openphonics.data.word.WordDao
@@ -22,8 +23,8 @@ class WordController @Inject constructor(
             validator.languageExistsOrThrowException(language)
             val words = wordDao.all(language)
             WordResponse.success(words)
-        } catch (bre: BadRequestException) {
-            WordResponse.failed(bre.message)
+        } catch (nfe: NotFoundException) {
+            WordResponse.notFound(nfe.message)
         }
     }
     fun get(id: Int): WordResponse {
@@ -31,8 +32,6 @@ class WordController @Inject constructor(
             validator.wordExistsOrThrowException(id)
             val word = wordDao.get(id)!!
             WordResponse.success(word)
-        } catch (bre: BadRequestException) {
-            WordResponse.failed(bre.message)
         } catch (nfe: NotFoundException) {
             WordResponse.notFound(nfe.message)
         }
@@ -56,6 +55,8 @@ class WordController @Inject constructor(
                 IntResponse.success(responseId)
             } catch (bre: BadRequestException) {
                 IntResponse.failed(bre.message)
+            } catch (nfe: NotFoundException) {
+                IntResponse.notFound(nfe.message)
             }
         }
     }

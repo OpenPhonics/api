@@ -43,13 +43,13 @@ class LanguageDaoImpl @Inject constructor(
         }.id.value
     }
     override fun get(id: Int): Language? = transaction {
-        LanguageEntity.findById(id)
-    }?.let {mapper.fromEntity(it)}
+        LanguageEntity.findById(id)?.let {mapper.fromEntity(it)}
+    }
     override fun get(nativeId: String, languageId: String): Language? = transaction {
         LanguageEntity.find {
             ((Languages.nativeId eq nativeId) and (Languages.languageId eq languageId))
-        }.firstOrNull()
-    }?.let {mapper.fromEntity(it)}
+        }.firstOrNull()?.let {mapper.fromEntity(it)}
+    }
     override fun delete(id: Int): Boolean = transaction {
         LanguageEntity.findById(id)?.run {
             delete()

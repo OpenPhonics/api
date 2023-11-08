@@ -5,6 +5,7 @@ import com.openphonics.application.exception.NotFoundException
 import com.openphonics.application.request.FlagRequest
 import com.openphonics.application.request.UpdateFlagRequest
 import com.openphonics.application.response.FlagResponse
+import com.openphonics.application.response.IntResponse
 import com.openphonics.application.response.StrResponse
 import com.openphonics.data.flag.FlagDao
 import com.openphonics.utils.OpenPhonicsRequestValidator
@@ -25,8 +26,8 @@ class FlagController @Inject constructor(
             validator.flagExistsOrThrowException(id)
             val flag = flagDao.get(id)!!
             FlagResponse.success(flag)
-        } catch (bre: BadRequestException) {
-            FlagResponse.failed(bre.message)
+        } catch (nfe: NotFoundException) {
+            FlagResponse.notFound(nfe.message)
         }
     }
     fun create(request: FlagRequest): StrResponse {
@@ -48,6 +49,8 @@ class FlagController @Inject constructor(
                 StrResponse.success(responseId)
             } catch (bre: BadRequestException) {
                 StrResponse.failed(bre.message)
+            } catch (nfe: NotFoundException) {
+                StrResponse.notFound(nfe.message)
             }
         }
     }
