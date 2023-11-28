@@ -1,7 +1,10 @@
 package com.openphonics.common.plugins
 
 import com.openphonics.common.DatabaseConfig
+import com.openphonics.course.Courses
+import com.openphonics.courseword.CourseWords
 import com.openphonics.language.Languages
+import com.openphonics.word.Words
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.*
@@ -26,6 +29,9 @@ fun Application.configureDatabase() {
 private fun initDatabase(databaseConfig: DatabaseConfig) {
     val tables = arrayOf(
         Languages,
+        Words,
+        Courses,
+        CourseWords
         )
 
     Database.connect(createDataSource(databaseConfig))

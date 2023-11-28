@@ -1,0 +1,10 @@
+POST http://localhost:8080/coursewords
+content-type: application/json
+
+{
+    "sourceWord": 1,
+    "targetWord": 2,
+    "course": 3
+}
+
+

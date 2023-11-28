@@ -10,7 +10,7 @@ import org.jetbrains.exposed.dao.id.IntIdTable
 
 object Words : IntIdTable() {
     val word = varchar("word", length = 100)
-    val phonic = varchar("phonic", length = 100)
+    val phonic = varchar("phonic", length = 100).nullable()
     val language = reference("language", Languages)
     init {
         uniqueIndex(word, language)
@@ -35,14 +35,14 @@ sealed class WordTemplate {
 @Serializable
 data class WordCreate(
     override val word: String,
-    override val phonic: String,
+    override val phonic: String?,
     override val language: Int
 ) : WordTemplate()
 
 @Serializable
 data class WordUpdate(
     override val word: String,
-    override val phonic: String
+    override val phonic: String?
 ) : WordTemplate(){
     override val language: Int? = null
 }
@@ -51,7 +51,7 @@ data class WordUpdate(
 data class WordBase(
     val id: Int,
     override val word: String,
-    override val phonic: String,
+    override val phonic: String?,
     override val language: Int
 ) : WordTemplate()
 

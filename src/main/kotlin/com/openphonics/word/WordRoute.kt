@@ -36,8 +36,8 @@ fun Route.WordAPI(wordController: Lazy<WordController> = controllers.wordControl
     post(wordController)
     all(wordController)
 }
-private fun Route.put(controller: Lazy<WordController>) {
-    put<Word> {
+private fun Route.post(controller: Lazy<WordController>) {
+    post<Word> {
         val request = runCatching { call.receive<WordCreate>() }.getOrElse {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_LANGUAGE_DETAILS)
         }
@@ -63,8 +63,8 @@ private fun Route.delete(controller: Lazy<WordController>) {
         call.respond(generateHttpCode(response), response)
     }
 }
-private fun Route.post(controller: Lazy<WordController>) {
-    post<Word.Id> {param ->
+private fun Route.put(controller: Lazy<WordController>) {
+    put<Word.Id> {param ->
         val request = runCatching { call.receive<WordUpdate>() }.getOrElse {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_LANGUAGE_DETAILS)
         }

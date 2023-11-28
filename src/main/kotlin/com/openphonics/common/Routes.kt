@@ -1,13 +1,11 @@
 package com.openphonics.common
 
 object Routes {
-    const val FLAGS = "/flag"
-
-    const val LANGUAGES = "/language"
+    const val LANGUAGES = "/languages"
     const val CODE = "code"
     const val NAME = "name"
 
-    const val WORDS = "/word"
+    const val WORDS = "/words"
     const val LANGUAGE = "language"
 
     const val COURSES = "/courses"

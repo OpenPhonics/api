@@ -41,8 +41,8 @@ fun Route.LanguageAPI(languageController: Lazy<LanguageController> = controllers
     post(languageController)
     all(languageController)
 }
-private fun Route.put(controller: Lazy<LanguageController>) {
-    put<Language> {
+private fun Route.post(controller: Lazy<LanguageController>) {
+    post<Language> {
         val request = runCatching { call.receive<LanguageCreate>() }.getOrElse {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_LANGUAGE_DETAILS)
         }
@@ -76,8 +76,8 @@ private fun Route.delete(controller: Lazy<LanguageController>) {
         call.respond(generateHttpCode(response), response)
     }
 }
-private fun Route.post(controller: Lazy<LanguageController>) {
-    post<Language.Id> {param ->
+private fun Route.put(controller: Lazy<LanguageController>) {
+    put<Language.Id> {param ->
         val request = runCatching { call.receive<LanguageUpdate>() }.getOrElse {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_LANGUAGE_DETAILS)
         }

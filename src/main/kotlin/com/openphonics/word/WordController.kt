@@ -6,6 +6,7 @@ import com.openphonics.common.exception.BadRequestException
 import com.openphonics.common.exception.NotFoundException
 import com.openphonics.common.ext.containsOnlyLetters
 import com.openphonics.language.LanguageBase
+import com.openphonics.language.LanguageDAO
 import com.openphonics.language.LanguageEntity
 import com.openphonics.language.LanguageOperations
 import javax.inject.Inject
@@ -17,17 +18,18 @@ abstract class WordController(dao: WordDAO) :
     WordOperationsController
 @Singleton
 class WordControllerImpl @Inject constructor(
-    override val dao: WordDAO
+    override val dao: WordDAO,
+    private val languageDao: LanguageDAO
 ) : WordController(dao) {
 
     override fun validateOrThrowException(id: Int, request: WordUpdate) {
         val entity = existsOrThrowException(id)
         with(request){
             val message = when {
-                word.length < 100 -> "word must be less than 100 characters"
+                word.length > 100 -> "word must be less than 100 characters"
                 !word.containsOnlyLetters() -> "word cannot contain numbers"
-                phonic.length < 100 -> "phonic must be less than 100 characters"
-                !phonic.containsOnlyLetters() -> "phonic cannot contain numbers"
+                phonic != null && phonic.length > 100 -> "phonic must be less than 100 characters"
+                phonic != null && !phonic.containsOnlyLetters() -> "phonic cannot contain numbers"
                 dao.get(word, entity.language) != null -> "word already exists"
                 else -> return
             }
@@ -37,13 +39,13 @@ class WordControllerImpl @Inject constructor(
 
     override fun validateOrThrowException(request: WordCreate) {
         with(request){
-            if (LanguageEntity.findById(language) == null)
+            if (languageDao.get(language) == null)
                 throw BadRequestException("language does not exist")
             val message = when {
-                word.length < 100 -> "word must be less than 100 characters"
+                word.length > 100 -> "word must be less than 100 characters"
                 !word.containsOnlyLetters() -> "word cannot contain numbers"
-                phonic.length < 100 -> "phonic must be less than 100 characters"
-                !phonic.containsOnlyLetters() -> "phonic cannot contain numbers"
+                phonic != null && phonic.length > 100 -> "phonic must be less than 100 characters"
+                phonic != null && !phonic.containsOnlyLetters() -> "phonic cannot contain numbers"
                 dao.get(word, language) != null -> "word already exists"
                 else -> return
             }
@@ -62,7 +64,7 @@ class WordControllerImpl @Inject constructor(
 
     override fun all(language: Int): DataResponse<WordBase> {
         return try {
-        if (LanguageEntity.findById(language) == null){
+        if (languageDao.get(language) == null){
             throw BadRequestException("language does not exist")
         }
         val data = dao.all(language)

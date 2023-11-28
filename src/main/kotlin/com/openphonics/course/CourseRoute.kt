@@ -35,8 +35,8 @@ fun Route.CourseAPI(courseController: Lazy<CourseController> = controllers.cours
     post(courseController)
     all(courseController)
 }
-private fun Route.put(controller: Lazy<CourseController>) {
-    put<Course> {
+private fun Route.post(controller: Lazy<CourseController>) {
+    post<Course> {
         val request = runCatching { call.receive<CourseCreate>() }.getOrElse {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_LANGUAGE_DETAILS)
         }
@@ -62,8 +62,8 @@ private fun Route.delete(controller: Lazy<CourseController>) {
         call.respond(generateHttpCode(response), response)
     }
 }
-private fun Route.post(controller: Lazy<CourseController>) {
-    post<Course.Id> { param ->
+private fun Route.put(controller: Lazy<CourseController>) {
+    put<Course.Id> { param ->
         val request = runCatching { call.receive<CourseUpdate>() }.getOrElse {
             throw BadRequestException(FailureMessages.MESSAGE_MISSING_LANGUAGE_DETAILS)
         }
