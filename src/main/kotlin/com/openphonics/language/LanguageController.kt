@@ -4,7 +4,7 @@ import com.openphonics.common.core.Controller
 import com.openphonics.common.core.DataResponse
 import com.openphonics.common.exception.BadRequestException
 import com.openphonics.common.exception.NotFoundException
-import com.openphonics.common.ext.containsOnlyLetters
+import com.openphonics.common.utils.ext.containsOnlyLetters
 import javax.inject.Inject
 import javax.inject.Singleton
 

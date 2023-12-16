@@ -20,6 +20,7 @@ class CourseWordDAOImpl @Inject constructor() : CourseWordDAO(CourseWordEntity) 
         table.new {
             this.sourceWord = WordEntity[data.sourceWord]
             this.targetWord = WordEntity[data.targetWord]
+            this.course = CourseEntity[data.course]
         }.id.value
     }
 

@@ -4,8 +4,10 @@ import com.openphonics.common.core.Controller
 import com.openphonics.common.core.DataResponse
 import com.openphonics.common.exception.BadRequestException
 import com.openphonics.common.exception.NotFoundException
+import com.openphonics.course.CourseDAO
 import com.openphonics.course.CourseEntity
 import com.openphonics.language.*
+import com.openphonics.word.WordDAO
 import com.openphonics.word.WordEntity
 import com.openphonics.word.Words
 import javax.inject.Inject
@@ -18,7 +20,9 @@ abstract class CourseWordController(dao: CourseWordDAO) :
 
 @Singleton
 class CourseWordControllerImpl @Inject constructor(
-    override val dao: CourseWordDAO
+    override val dao: CourseWordDAO,
+    private val wordDao: WordDAO,
+    private val courseDao: CourseDAO
 ) : CourseWordController(dao) {
 
     override fun validateOrThrowException(id: Int, request: CourseWordUpdate) {
@@ -31,16 +35,17 @@ class CourseWordControllerImpl @Inject constructor(
 
     override fun validateOrThrowException(request: CourseWordCreate) {
         with(request){
+            existsCourseIdOrThrowException(course)
             existsWordIdOrThrowException(sourceWord)
             existsWordIdOrThrowException(targetWord)
         }
     }
     private fun existsWordIdOrThrowException(id: Int){
-        if (WordEntity.findById(id) == null)
+        if (wordDao.get(id) == null)
             throw BadRequestException("id code does not exist")
     }
     private fun existsCourseIdOrThrowException(id: Int){
-        if (CourseEntity.findById(id) == null)
+        if (courseDao.get(id) == null)
             throw BadRequestException("id code does not exist")
     }
     override fun all(course: Int): DataResponse<CourseWordBase> {

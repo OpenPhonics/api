@@ -1,4 +1,4 @@
-package com.openphonics.common.ext
+package com.openphonics.common.utils.ext
 
 fun String.containsOnlyLetters(): Boolean {
 

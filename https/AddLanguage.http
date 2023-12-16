@@ -1,8 +1,2 @@
-POST http://localhost:8080/languages
-Content-Type: application/json
-
-{
-  "languageCode": "en",
-  "phonic": null,
-  "language": 8
-}
+GET http://localhost:8080/words/language/1
+Accept:application/json

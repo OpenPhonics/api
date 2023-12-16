@@ -14,7 +14,8 @@ abstract class CourseController(dao: CourseDAO) :
 
 @Singleton
 class CourseControllerImpl @Inject constructor(
-    override val dao: CourseDAO
+    override val dao: CourseDAO,
+    private val languageDao: LanguageDAO
 ) : CourseController(dao) {
 
     override fun validateOrThrowException(id: Int, request: CourseUpdate) {
@@ -32,13 +33,11 @@ class CourseControllerImpl @Inject constructor(
         }
     }
     private fun existsLanguageCodeOrThrowException(languageCode: String){
-        if (LanguageEntity.find {
-                Languages.languageCode eq languageCode
-            }.firstOrNull() == null)
+        if (languageDao.getByLanguageCode(languageCode) == null)
             throw BadRequestException("language code does not exist")
     }
     private fun existsLanguageIdOrThrowException(id: Int){
-        if (LanguageEntity.findById(id) == null)
+        if (languageDao.get(id) == null)
             throw BadRequestException("id code does not exist")
     }
     override fun all(languageCode: String): DataResponse<CourseBase> {

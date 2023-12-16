@@ -11,8 +11,8 @@ import org.jetbrains.exposed.dao.id.IntIdTable
 import kotlinx.serialization.Serializable
 
 object CourseWords : IntIdTable() {
-    val sourceWord = reference("source_language", Words)
-    val targetWord = reference("target_language", Words)
+    val sourceWord = reference("source_word", Words)
+    val targetWord = reference("target_word", Words)
     val course = reference("course", Courses)
 }
 
