@@ -22,6 +22,7 @@ fun Application.configureDatabase() {
             name = environment.config.property("db.name").getString(),
             user = environment.config.property("db.user").getString(),
             password = environment.config.property("db.password").getString(),
+            driver = environment.config.property("db.driver").getString(),
             maxPoolSize = environment.config.property("db.max_pool_size").getString().toInt()
         )
     )
@@ -46,6 +47,7 @@ private fun createDataSource(databaseConfig: DatabaseConfig): DataSource {
         config.jdbcUrl = "jdbc:postgresql://$host/$name"
         config.username = user
         config.password = password
+        config.driverClassName = driver
         config.maximumPoolSize = maxPoolSize
     }
     config.validate()
