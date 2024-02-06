@@ -11,7 +11,7 @@ import com.openphonics.language.LanguageEntity
 import com.openphonics.language.LanguageOperations
 import javax.inject.Inject
 import javax.inject.Singleton
-typealias WordOperationsController = WordOperations<DataResponse<WordBase>, DataResponse<WordBase>>
+typealias WordOperationsController = WordOperations<DataResponse<List<WordBase>>, DataResponse<List<WordBase>>>
 
 abstract class WordController(dao: WordDAO) :
     Controller<WordTemplate, WordCreate, WordUpdate, WordBase, WordEntity>(dao),
@@ -53,16 +53,16 @@ class WordControllerImpl @Inject constructor(
         }
     }
 
-    override fun get(word: String, language: Int): DataResponse<WordBase> {
+    override fun get(word: String, language: Int): DataResponse<List<WordBase>> {
         return try {
             val data = dao.get(word, language) ?: throw NotFoundException("word $word does not exist")
-            DataResponse.success(data)
+            DataResponse.success(listOf(data))
         } catch (nfe: NotFoundException) {
             DataResponse.notFound(nfe.message)
         }
     }
 
-    override fun all(language: Int): DataResponse<WordBase> {
+    override fun all(language: Int): DataResponse<List<WordBase>> {
         return try {
         if (languageDao.get(language) == null){
             throw BadRequestException("language does not exist")

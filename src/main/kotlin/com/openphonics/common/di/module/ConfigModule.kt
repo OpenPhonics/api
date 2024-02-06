@@ -14,27 +14,22 @@
  * limitations under the License.
  */
 
-package com.openphonics.common.di.component
+package com.openphonics.common.di.module
 
-import dagger.BindsInstance
-import dagger.Component
+import dagger.Module
+import dagger.Provides
 import io.ktor.server.application.*
-import io.ktor.util.*
+import io.ktor.server.config.*
+import javax.inject.Singleton
+
+@Module
+object ConfigModule {
+    @Provides
+    fun applicationConfig(application: Application) = application.environment.config
 
 
-@Component
-interface AppComponent {
-    fun application(): Application
-
-    fun controllerComponent(): ControllerComponent
-    fun configComponent(): ConfigComponent
-    fun daoComponent(): DaoComponent
-
-
-    @Component.Builder
-    interface Builder {
-        @BindsInstance
-        fun withApplication(application: Application): Builder
-        fun build(): AppComponent
-    }
+    @Singleton
+    @Provides
+    @SecretKey
+    fun secretKey(config: ApplicationConfig): String = config.property("key.secret").getString()
 }

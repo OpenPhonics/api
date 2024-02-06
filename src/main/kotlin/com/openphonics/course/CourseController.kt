@@ -7,7 +7,7 @@ import com.openphonics.language.*
 import javax.inject.Inject
 import javax.inject.Singleton
 
-typealias CourseOperationsController = CourseOperations<DataResponse<CourseBase>>
+typealias CourseOperationsController = CourseOperations<DataResponse<List<CourseBase>>>
 abstract class CourseController(dao: CourseDAO) :
     Controller<CourseTemplate, CourseCreate, CourseUpdate, CourseBase, CourseEntity>(dao),
     CourseOperationsController
@@ -40,7 +40,7 @@ class CourseControllerImpl @Inject constructor(
         if (languageDao.get(id) == null)
             throw BadRequestException("id code does not exist")
     }
-    override fun all(languageCode: String): DataResponse<CourseBase> {
+    override fun all(languageCode: String): DataResponse<List<CourseBase>> {
         return try {
             existsLanguageCodeOrThrowException(languageCode)
             val data = dao.all(languageCode)

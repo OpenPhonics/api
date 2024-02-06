@@ -14,27 +14,10 @@
  * limitations under the License.
  */
 
-package com.openphonics.common.di.component
+package com.openphonics.auth.principal
 
-import dagger.BindsInstance
-import dagger.Component
-import io.ktor.server.application.*
-import io.ktor.util.*
+import com.openphonics.auth.User
+import io.ktor.server.auth.*
 
 
-@Component
-interface AppComponent {
-    fun application(): Application
-
-    fun controllerComponent(): ControllerComponent
-    fun configComponent(): ConfigComponent
-    fun daoComponent(): DaoComponent
-
-
-    @Component.Builder
-    interface Builder {
-        @BindsInstance
-        fun withApplication(application: Application): Builder
-        fun build(): AppComponent
-    }
-}
+class UserPrincipal(val user: User) : Principal

@@ -1,6 +1,11 @@
 package com.openphonics.common.exception
 
 object FailureMessages {
+
+    const val MESSAGE_ACCESS_DENIED = "Access denied."
+    const val MESSAGE_MISSING_CREDENTIALS = "Required 'username'  missing."
+
+
     const val MESSAGE_MISSING_UPDATE_FLAG_DETAILS = "Required 'flag' missing."
     const val MESSAGE_MISSING_FLAG_DETAILS = "Required 'flag' or 'id' missing."
 

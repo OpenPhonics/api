@@ -16,25 +16,13 @@
 
 package com.openphonics.common.di.component
 
-import dagger.BindsInstance
-import dagger.Component
-import io.ktor.server.application.*
-import io.ktor.util.*
+import dagger.Subcomponent
+import com.openphonics.common.di.module.ConfigModule
+import com.openphonics.common.di.module.SecretKey
+import javax.inject.Singleton
 
-
-@Component
-interface AppComponent {
-    fun application(): Application
-
-    fun controllerComponent(): ControllerComponent
-    fun configComponent(): ConfigComponent
-    fun daoComponent(): DaoComponent
-
-
-    @Component.Builder
-    interface Builder {
-        @BindsInstance
-        fun withApplication(application: Application): Builder
-        fun build(): AppComponent
-    }
+@Singleton
+@Subcomponent(modules = [ConfigModule::class])
+interface ConfigComponent {
+    @SecretKey fun secretKey(): String
 }

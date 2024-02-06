@@ -1,6 +1,7 @@
 package com.openphonics.common.plugins
 
 
+import com.openphonics.auth.AuthAPI
 import com.openphonics.course.CourseAPI
 import com.openphonics.courseword.CourseWordAPI
 import com.openphonics.language.LanguageAPI
@@ -14,6 +15,7 @@ import io.ktor.util.*
 fun Application.configureRouting() {
     install(Resources)
     routing {
+        AuthAPI()
         LanguageAPI()
         WordAPI()
         CourseAPI()

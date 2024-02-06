@@ -16,8 +16,12 @@
 
 package com.openphonics.common.di.component
 
+import com.openphonics.auth.AuthController
+import com.openphonics.auth.JWTController
+import com.openphonics.common.di.module.ConfigModule
 import com.openphonics.common.di.module.ControllerModule
 import com.openphonics.common.di.module.DAOModule
+import com.openphonics.common.di.module.EncryptorModule
 import com.openphonics.course.CourseController
 import com.openphonics.courseword.CourseWordController
 import dagger.Lazy
@@ -30,10 +34,13 @@ import javax.inject.Singleton
 
 @KtorExperimentalAPI
 @Singleton
-@Subcomponent(modules = [ControllerModule::class, DAOModule::class])
+@Subcomponent(modules = [ControllerModule::class, DAOModule::class, EncryptorModule::class, ConfigModule::class])
 interface ControllerComponent {
     fun languageController(): Lazy<LanguageController>
     fun wordController(): Lazy<WordController>
     fun courseController(): Lazy<CourseController>
+    fun authController(): Lazy<AuthController>
     fun courseWordController(): Lazy<CourseWordController>
+    fun jwtController(): Lazy<JWTController>
+
 }

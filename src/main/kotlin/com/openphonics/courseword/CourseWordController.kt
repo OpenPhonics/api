@@ -13,7 +13,7 @@ import com.openphonics.word.Words
 import javax.inject.Inject
 import javax.inject.Singleton
 
-typealias CourseWordOperationsController = CourseWordOperations<DataResponse<CourseWordBase>>
+typealias CourseWordOperationsController = CourseWordOperations<DataResponse<List<CourseWordBase>>>
 abstract class CourseWordController(dao: CourseWordDAO) :
     Controller<CourseWordTemplate, CourseWordCreate, CourseWordUpdate, CourseWordBase, CourseWordEntity>(dao),
     CourseWordOperationsController
@@ -48,7 +48,7 @@ class CourseWordControllerImpl @Inject constructor(
         if (courseDao.get(id) == null)
             throw BadRequestException("id code does not exist")
     }
-    override fun all(course: Int): DataResponse<CourseWordBase> {
+    override fun all(course: Int): DataResponse<List<CourseWordBase>> {
         return try {
             existsCourseIdOrThrowException(course)
             val data = dao.all(course)

@@ -1,5 +1,7 @@
 package com.openphonics.common.plugins
 
+import com.openphonics.auth.User
+import com.openphonics.auth.Users
 import com.openphonics.common.DatabaseConfig
 import com.openphonics.course.Courses
 import com.openphonics.courseword.CourseWords
@@ -17,11 +19,9 @@ fun Application.configureDatabase() {
     initDatabase(
         DatabaseConfig(
             host = environment.config.property("db.host").getString(),
-            port = environment.config.property("db.port").getString(),
             name = environment.config.property("db.name").getString(),
             user = environment.config.property("db.user").getString(),
             password = environment.config.property("db.password").getString(),
-            driver = environment.config.property("db.driver").getString(),
             maxPoolSize = environment.config.property("db.max_pool_size").getString().toInt()
         )
     )
@@ -31,7 +31,8 @@ private fun initDatabase(databaseConfig: DatabaseConfig) {
         Languages,
         Words,
         Courses,
-        CourseWords
+        CourseWords,
+        Users
         )
 
     Database.connect(createDataSource(databaseConfig))
@@ -42,11 +43,10 @@ private fun initDatabase(databaseConfig: DatabaseConfig) {
 private fun createDataSource(databaseConfig: DatabaseConfig): DataSource {
     val config = HikariConfig()
     with(databaseConfig) {
-        config.driverClassName = driver
-        config.password = password
-        config.jdbcUrl = "jdbc:postgresql://$host:$port/$name"
-        config.maximumPoolSize = maxPoolSize
+        config.jdbcUrl = "jdbc:postgresql://$host/$name"
         config.username = user
+        config.password = password
+        config.maximumPoolSize = maxPoolSize
     }
     config.validate()
     return HikariDataSource(config)

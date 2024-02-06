@@ -4,7 +4,7 @@ import com.openphonics.common.exception.BadRequestException
 import com.openphonics.common.exception.NotFoundException
 import org.jetbrains.exposed.dao.IntEntity
 
-typealias CRUDController<Template, Create, Update, Base> = CRUD<Template, Create, Update, DataResponse<Base>, IdResponse, IdResponse>
+typealias CRUDController<Template, Create, Update, Base> = CRUD<Template, Create, Update, DataResponse<Base>, DataResponse<Int>, DataResponse<Int>>
 
 abstract class Controller<Template, Create : Template, Update : Template, Base : Template, Entity : IntEntity>(
     protected open val dao: DAO<Template, Create, Update, Base, Entity>
@@ -24,39 +24,39 @@ abstract class Controller<Template, Create : Template, Update : Template, Base :
         }
     }
 
-    override fun create(data: Create): IdResponse {
+    override fun create(data: Create): DataResponse<Int> {
         return try {
             validateOrThrowException(data)
             val responseId = dao.create(data)
-            IdResponse.success(responseId)
+            DataResponse.success(responseId)
         } catch (bre: BadRequestException) {
-            IdResponse.failed(bre.message)
+            DataResponse.failed(bre.message)
         }
     }
 
-    override fun update(id: Int, data: Update): IdResponse {
+    override fun update(id: Int, data: Update): DataResponse<Int> {
         return try {
             validateOrThrowException(id, data)
             val responseId = dao.update(id, data)
-            IdResponse.success(responseId)
+            DataResponse.success(responseId)
         } catch (bre: BadRequestException) {
-            IdResponse.failed(bre.message)
+            DataResponse.failed(bre.message)
         } catch (nfe: NotFoundException) {
-            IdResponse.notFound(nfe.message)
+            DataResponse.notFound(nfe.message)
         }
     }
 
-    override fun delete(id: Int): IdResponse {
+    override fun delete(id: Int): DataResponse<Int> {
         return try {
             if (dao.delete(id)) {
-                IdResponse.success(id)
+                DataResponse.success(id)
             } else {
-                IdResponse.failed("Error Occurred")
+                DataResponse.failed("Error Occurred")
             }
         } catch (bre: BadRequestException) {
-            IdResponse.failed(bre.message)
+            DataResponse.failed(bre.message)
         } catch (nfe: NotFoundException) {
-            IdResponse.notFound(nfe.message)
+            DataResponse.notFound(nfe.message)
         }
     }
 }

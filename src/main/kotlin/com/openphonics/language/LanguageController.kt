@@ -8,7 +8,7 @@ import com.openphonics.common.utils.ext.containsOnlyLetters
 import javax.inject.Inject
 import javax.inject.Singleton
 
-typealias LanguageOperationsController = LanguageOperations<DataResponse<LanguageBase>, DataResponse<LanguageBase>>
+typealias LanguageOperationsController = LanguageOperations<DataResponse<List<LanguageBase>>, DataResponse<List<LanguageBase>>>
 abstract class LanguageController(dao: LanguageDAO) :
     Controller<LanguageTemplate, LanguageCreate, LanguageUpdate, LanguageBase, LanguageEntity>(dao),
     LanguageOperationsController
@@ -53,31 +53,31 @@ class LanguageControllerImpl @Inject constructor(
         }
     }
 
-    override fun getByLanguageCode(code: String): DataResponse<LanguageBase> {
+    override fun getByLanguageCode(code: String): DataResponse<List<LanguageBase>> {
         return try {
             if (dao.getByLanguageCode(code) == null) {
                 throw NotFoundException("language code $code does not exist")
             }
             val data = dao.getByLanguageCode(code)!!
-            DataResponse.success(data)
+            DataResponse.success(listOf(data))
         } catch (nfe: NotFoundException) {
             DataResponse.notFound(nfe.message)
         }
     }
 
-    override fun getByLanguageName(name: String): DataResponse<LanguageBase> {
+    override fun getByLanguageName(name: String): DataResponse<List<LanguageBase>> {
         return try {
             if (dao.getByLanguageName(name) == null) {
                 throw NotFoundException("language name $name does not exist")
             }
             val data = dao.getByLanguageName(name)!!
-            DataResponse.success(data)
+            DataResponse.success(listOf(data))
         } catch (nfe: NotFoundException) {
             DataResponse.notFound(nfe.message)
         }
     }
 
-    override fun all(): DataResponse<LanguageBase> {
+    override fun all(): DataResponse<List<LanguageBase>> {
         val data = dao.all()
         return DataResponse.success(data)
     }

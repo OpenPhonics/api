@@ -1,2 +1,8 @@
-GET http://localhost:8080/words/language/1
-Accept:application/json
+POST http://localhost:8080/login
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJOb3R5S1QtSldULUlzc3VlciIsImF1ZCI6Imh0dHBzOi8vbm90eWt0LXByb2R1Y3Rpb24udXAucmFpbHdheS5hcHAiLCJ1c2VySWQiOiI4MmRmMzAzMC1jMGUyLTRhMmMtYWJjZC02MDJjOTZhYmE3MGYifQ.dgEtlMM3nywuWterus1JPlvxage7LhHkaw8lM7m-psw
+Content-Type:application/json
+
+{
+  "username": "random"
+}
+
